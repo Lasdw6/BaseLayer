@@ -235,7 +235,7 @@ npm run bench:compare
 
 ### `bench:latency`
 
-Aligned with BrowserArena `hello-browser` stage names. Default navigation is `BENCH_BROWSERARENA_PAGE_URL` or `https://google.com/` with Playwright `page.goto` `waitUntil: domcontentloaded` (set `BENCH_PAGE_GOTO_WAIT_UNTIL` to override). Set `BENCH_USE_LOCAL_BENCH_SITE=1` to use the in-repo HTTP bench page instead.
+Aligned with BrowserArena `hello-browser` stage names. Default navigation is `BENCH_BROWSERARENA_PAGE_URL` or `https://example.com/` with Playwright `page.goto` `waitUntil: domcontentloaded` (set `BENCH_PAGE_GOTO_WAIT_UNTIL` to override). Set `BENCH_BROWSERARENA_PAGE_URL=https://google.com/` only when reproducing the historical Google-era rows. Set `BENCH_USE_LOCAL_BENCH_SITE=1` to use the in-repo HTTP bench page instead.
 
 `session_release_ms` measures the public API release response. BaseLayer intentionally returns release after marking the session terminated and starts node-agent teardown asynchronously, so this metric should stay close to control-plane response latency rather than full VM cleanup time. If it jumps into hundreds or thousands of milliseconds, the delete path has likely regressed back to synchronous teardown.
 

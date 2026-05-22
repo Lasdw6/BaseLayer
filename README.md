@@ -15,12 +15,22 @@ session create + CDP connect + page.goto + session release
 These are **self-hosted BrowserArena-methodology runs**, not official
 BrowserArena leaderboard submissions.
 
+### Google-Target Snapshot
+
+The headline BaseLayer rows below used the BrowserArena `hello-browser`
+methodology as it existed at the time of the runs: `page.goto` against
+`https://google.com/` with `waitUntil: "domcontentloaded"`.
+
+BrowserArena changed its default fairness URL to `example.com` on 2026-05-05.
+Current BrowserArena leaderboard numbers are therefore much lower and are not
+directly comparable with these Google-target rows.
+
 | Runtime / profile | Topology | Runs | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `baselayer-firecracker-headless-shell-cdp-warm-density` | AWS `t3.micro` runner -> AWS `m5zn.metal` provider, `us-east-2`, BrowserArena `hello-browser` | 100 | `99/100` | `93 ms` | `56 ms` | `618 ms` | `5 ms` | `769 ms` |
-| `baselayer-firecracker-headless-shell-cdp-warm-density` | AWS `t3.micro` runner -> AWS `m5zn.metal` provider, `us-east-1`, BrowserArena `hello-browser` | 100 | `99/100` | `87 ms` | `102 ms` | `555 ms` | `5 ms` | `749 ms` |
-| `baselayer-firecracker-full-chromium` | AWS `t3.micro` runner -> AWS `m5zn.metal` provider, public `/v1`, BrowserArena `hello-browser` | 100 | `100/100` | `96 ms` | `61 ms` | `619 ms` | `10 ms` | `784 ms` |
-| `baselayer-firecracker-headless-shell` | AWS `m5zn.metal`, concurrent BrowserArena-style waves | c24 | `24/24` | `448 ms` | `104 ms` | `3788 ms` | `9 ms` | `4349 ms` |
+| `baselayer-firecracker-headless-shell-cdp-warm-density` | AWS `t3.micro` runner -> AWS `m5zn.metal` provider, `us-east-2`, BrowserArena `hello-browser`, Google target | 100 | `99/100` | `93 ms` | `56 ms` | `618 ms` | `5 ms` | `769 ms` |
+| `baselayer-firecracker-headless-shell-cdp-warm-density` | AWS `t3.micro` runner -> AWS `m5zn.metal` provider, `us-east-1`, BrowserArena `hello-browser`, Google target | 100 | `99/100` | `87 ms` | `102 ms` | `555 ms` | `5 ms` | `749 ms` |
+| `baselayer-firecracker-full-chromium` | AWS `t3.micro` runner -> AWS `m5zn.metal` provider, public `/v1`, BrowserArena `hello-browser`, Google target | 100 | `100/100` | `96 ms` | `61 ms` | `619 ms` | `10 ms` | `784 ms` |
+| `baselayer-firecracker-headless-shell` | AWS `m5zn.metal`, concurrent BrowserArena-style waves, Google target | c24 | `24/24` | `448 ms` | `104 ms` | `3788 ms` | `9 ms` | `4349 ms` |
 
 The safest published baseline is the `769 ms` row because the faster `749 ms`
 row still had one create timeout and one large create outlier. See
@@ -100,7 +110,7 @@ export BASELAYER_API_URL="http://<provider-host>:3000/v1"
 export BASELAYER_RUNTIME_PROFILE="baselayer-firecracker-headless-shell"
 export BENCH_RUNS=100
 export BENCH_CONCURRENCY=1
-export BENCH_BROWSERARENA_PAGE_URL="https://google.com/"
+export BENCH_BROWSERARENA_PAGE_URL="https://example.com/"
 export BENCH_PAGE_GOTO_WAIT_UNTIL="domcontentloaded"
 export BENCH_OUT="$PWD/data/benchmarks/provider-api-100.json"
 
@@ -110,6 +120,12 @@ npm run bench:provider-api
 The output JSON includes p50/p95/p99 for each BrowserArena-style stage plus the
 raw per-iteration rows.
 
+To reproduce the historical Google-target rows, use:
+
+```bash
+export BENCH_BROWSERARENA_PAGE_URL="https://google.com/"
+```
+
 ### 3. Run With The BrowserArena Harness
 
 The headline rows above were produced with the BrowserArena `hello-browser`
@@ -117,7 +133,8 @@ lifecycle against a self-hosted BaseLayer provider endpoint. Use the same
 topology when comparing numbers:
 
 - runner and provider in the same AWS region
-- target: Google
+- target: `example.com` for current BrowserArena methodology, or Google only
+  when reproducing the historical snapshot above
 - wait condition: `domcontentloaded`
 - runs: `100`
 - concurrency: `1`

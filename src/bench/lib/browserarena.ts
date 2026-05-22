@@ -1,8 +1,10 @@
 /**
- * Defaults aligned with BrowserArena `hello-browser` + `browserarena-results.md`
- * (external runner, `https://google.com/`, DOMContentLoaded navigation completion).
+ * Defaults aligned with current BrowserArena `hello-browser` methodology
+ * (`https://example.com/`, DOMContentLoaded navigation completion).
+ * Set BENCH_BROWSERARENA_PAGE_URL=https://google.com/ to reproduce the
+ * historical Google-era BaseLayer rows.
  */
-export const DEFAULT_BROWSERARENA_PAGE_URL = "https://google.com/";
+export const DEFAULT_BROWSERARENA_PAGE_URL = "https://example.com/";
 
 export function getBrowserArenaPageUrl(): string {
   const raw = process.env["BENCH_BROWSERARENA_PAGE_URL"]?.trim();

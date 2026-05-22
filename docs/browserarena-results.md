@@ -1,4 +1,70 @@
-# Browserarena Results
+# BrowserArena Results
+
+## Methodology Snapshot
+
+BrowserArena changed the default benchmark URL from Google to `example.com` on
+2026-05-05. That makes the current public leaderboard much faster than the
+older Google-target leaderboard BaseLayer originally compared against.
+
+Keep the two eras separate:
+
+- **Google-era BrowserArena:** `page.goto("https://google.com/")`,
+  `waitUntil: "domcontentloaded"`. BaseLayer's `769 ms` result belongs here.
+- **Current BrowserArena:** `page.goto("https://example.com/")`,
+  `waitUntil: "domcontentloaded"`. BaseLayer has not yet published a rerun in
+  this methodology.
+
+## Google-Era Sequential Snapshot
+
+This table freezes the old comparison set used by the BaseLayer result notes.
+It should be used only for Google-target comparisons.
+
+| Rank | Provider / Variant | Lifecycle | Create | Connect | Goto | Release | Success |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 1 | Kernel | `743 ms` | `28 ms` | `278 ms` | `398 ms` | `39 ms` | `1000/1000` |
+| 2 | BaseLayer BrowserArena-comparable self-run | `769 ms` | `93 ms` | `56 ms` | `618 ms` | `5 ms` | `99/100` |
+| 3 | Kernel Headful | `881 ms` | `29 ms` | `400 ms` | `412 ms` | `40 ms` | `1000/1000` |
+| 4 | Notte | `953 ms` | `229 ms` | `123 ms` | `507 ms` | `94 ms` | `1000/1000` |
+| 5 | Steel | `1627 ms` | `430 ms` | `575 ms` | `549 ms` | `73 ms` | `1000/1000` |
+| 6 | Hyperbrowser | `2081 ms` | `1307 ms` | `186 ms` | `293 ms` | `295 ms` | `1000/1000` |
+| 7 | Browserbase | `2246 ms` | `178 ms` | `946 ms` | `939 ms` | `183 ms` | `1000/1000` |
+| 8 | Anchor Browser | `2967 ms` | `1356 ms` | `137 ms` | `693 ms` | `781 ms` | `1000/1000` |
+| 9 | Browser Use | `5035 ms` | `1268 ms` | `105 ms` | `1602 ms` | `2060 ms` | `983/1000` |
+
+## Current `example.com` Sequential Snapshot
+
+As of the BrowserArena `2026-05-22` c1 artifacts, the same providers are much
+faster on the new `example.com` target:
+
+| Provider | Lifecycle | Create | Connect | Goto | Release | Success |
+|---|---:|---:|---:|---:|---:|---:|
+| Kernel Headful | `264 ms` | `33 ms` | `71 ms` | `123 ms` | `38 ms` | `100/100` |
+| Kernel | `341 ms` | `34 ms` | `84 ms` | `185 ms` | `39 ms` | `100/100` |
+| Notte | `394 ms` | `157 ms` | `112 ms` | `101 ms` | `24 ms` | `100/100` |
+| Browserbase | `557 ms` | `110 ms` | `241 ms` | `126 ms` | `81 ms` | `100/100` |
+| Steel | `1190 ms` | `346 ms` | `629 ms` | `100 ms` | `116 ms` | `100/100` |
+| Hyperbrowser | `1761 ms` | `1048 ms` | `218 ms` | `134 ms` | `361 ms` | `99/100` |
+| Anchor Browser | `3664 ms` | `1440 ms` | `155 ms` | `1257 ms` | `812 ms` | `99/100` |
+| Browser Use | `4538 ms` | `1489 ms` | `114 ms` | `782 ms` | `2154 ms` | `100/100` |
+
+BaseLayer needs a fresh `example.com` run before making any current-leaderboard
+claim. The expected command shape for the in-repo provider harness is:
+
+```bash
+export BASELAYER_API_URL="http://<provider-host>:3000/v1"
+export BASELAYER_RUNTIME_PROFILE="baselayer-firecracker-headless-shell-cdp-warm-density"
+export BENCH_RUNS=100
+export BENCH_CONCURRENCY=1
+export BENCH_BROWSERARENA_PAGE_URL="https://example.com/"
+export BENCH_PAGE_GOTO_WAIT_UNTIL="domcontentloaded"
+export BENCH_OUT="$PWD/data/benchmarks/provider-api-example-c1-100.json"
+
+npm run bench:provider-api
+```
+
+For a BrowserArena-runner result, patch/register the BaseLayer provider in a
+fresh BrowserArena checkout and run the same provider against
+`https://example.com/`.
 
 Note:
 - This file records the first realistic `100`-run browserarena result.

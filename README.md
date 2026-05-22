@@ -3,28 +3,143 @@
 BaseLayer is an open-source browser hosting control plane and host runtime for
 running Chromium sessions with Docker and Firecracker-backed isolation.
 
-This repository is a research/runtime release. It includes:
+It was built to test how fast a self-hosted browser provider can get on the
+BrowserArena lifecycle methodology:
 
-- a control-plane HTTP API for browser session lifecycle management
-- a node-agent runtime that can launch browser sessions
+```text
+session create + CDP connect + page.goto + session release
+```
+
+## Results
+
+These are **self-hosted BrowserArena-methodology runs**, not official
+BrowserArena leaderboard submissions.
+
+| Runtime / profile | Topology | Runs | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `baselayer-firecracker-headless-shell-cdp-warm-density` | AWS `t3.micro` runner -> AWS `m5zn.metal` provider, `us-east-2`, BrowserArena `hello-browser` | 100 | `99/100` | `93 ms` | `56 ms` | `618 ms` | `5 ms` | `769 ms` |
+| `baselayer-firecracker-headless-shell-cdp-warm-density` | AWS `t3.micro` runner -> AWS `m5zn.metal` provider, `us-east-1`, BrowserArena `hello-browser` | 100 | `99/100` | `87 ms` | `102 ms` | `555 ms` | `5 ms` | `749 ms` |
+| `baselayer-firecracker-full-chromium` | AWS `t3.micro` runner -> AWS `m5zn.metal` provider, public `/v1`, BrowserArena `hello-browser` | 100 | `100/100` | `96 ms` | `61 ms` | `619 ms` | `10 ms` | `784 ms` |
+| `baselayer-firecracker-headless-shell` | AWS `m5zn.metal`, concurrent BrowserArena-style waves | c24 | `24/24` | `448 ms` | `104 ms` | `3788 ms` | `9 ms` | `4349 ms` |
+
+The safest published baseline is the `769 ms` row because the faster `749 ms`
+row still had one create timeout and one large create outlier. See
+[`docs/browserarena-results.md`](./docs/browserarena-results.md) and
+[`docs/current-best-profiles.md`](./docs/current-best-profiles.md) for caveats
+and historical context.
+
+## What This Repo Contains
+
+- control-plane HTTP API for browser session lifecycle management
+- node-agent runtime for launching browser sessions
 - Docker-backed per-session runtime support
 - Firecracker snapshot/restore tooling for `chromium-headless-shell`
-- benchmark harnesses and result notes for browser hosting experiments
+- benchmark harnesses aligned to BrowserArena stage names
+- public result notes and profile documentation
 
-BaseLayer is not a managed browser automation product. It is lower-level
-infrastructure for people experimenting with browser hosting, session
-scheduling, and microVM-based browser runtimes.
+BaseLayer is lower-level infrastructure for browser hosting experiments. It is
+not a managed browser automation product.
 
-## Status
+## Replicate The Self-Hosted Methodology
 
-The main path is Firecracker snapshot restore with
-`chromium-headless-shell`. Full Chromium guests, fluid CPU scheduling, and
-Lightpanda-related experiments are kept as experimental lanes unless a doc says
-otherwise.
+The most direct in-repo replication path is the provider `/v1` benchmark
+harness. It uses the same lifecycle stages as BrowserArena:
 
-Do not treat the benchmark notes as official leaderboard submissions unless the
-specific document says the run used a leaderboard-equivalent topology. Many
-results are same-host or lab runs intended to guide runtime development.
+- `session_creation_ms`
+- `session_connect_ms`
+- `page_goto_ms`
+- `session_release_ms`
+- `total_ms`
+
+### 1. Prepare A Linux/KVM Provider Host
+
+Use a Linux host with KVM enabled. The published AWS runs used `m5zn.metal`.
+
+```bash
+git clone https://github.com/Lasdw6/BaseLayer.git baselayer
+cd baselayer
+npm ci
+npm run build
+./scripts/bench/bootstrap-firecracker-linux.sh
+sudo ./scripts/firecracker/build-headless-shell-rootfs.sh
+```
+
+Start the control plane and Firecracker node agent:
+
+```bash
+export CONTROL_PLANE_PORT=3000
+export CONTROL_PLANE_ASYNC_SESSION_DELETE=1
+
+export CONTROL_PLANE_URL="http://127.0.0.1:3000"
+export NODE_AGENT_PORT=4000
+export NODE_AGENT_PUBLIC_HOST="127.0.0.1"
+export NODE_AGENT_MODE="firecracker"
+export BASELAYER_SUPPORTED_RUNTIME_PROFILES="baselayer-firecracker-headless-shell"
+
+export FIRECRACKER_KERNEL_PATH="$PWD/artifacts/firecracker/vmlinux"
+export FIRECRACKER_ROOTFS_PATH="$PWD/artifacts/firecracker/rootfs.ext4"
+export FIRECRACKER_SNAPSHOT_DIR="$PWD/data/firecracker/snapshots"
+export FIRECRACKER_ALLOW_AUTO_SNAPSHOT=1
+
+npm run dev:api
+# in another shell:
+npm run dev:agent
+```
+
+For public network tests, put the API behind your own firewall/reverse proxy and
+enable API-key auth. If you run a split public/internal deployment, set
+`CONTROL_PLANE_PUBLIC_V1_ONLY=1` only on the public listener; the node agent
+still needs internal registration routes. See [Public API Safety](#public-api-safety).
+
+### 2. Run The Built-In BrowserArena-Stage Harness
+
+From the provider host or a same-region runner:
+
+```bash
+export BASELAYER_API_URL="http://<provider-host>:3000/v1"
+export BASELAYER_RUNTIME_PROFILE="baselayer-firecracker-headless-shell"
+export BENCH_RUNS=100
+export BENCH_CONCURRENCY=1
+export BENCH_BROWSERARENA_PAGE_URL="https://google.com/"
+export BENCH_PAGE_GOTO_WAIT_UNTIL="domcontentloaded"
+export BENCH_OUT="$PWD/data/benchmarks/provider-api-100.json"
+
+npm run bench:provider-api
+```
+
+The output JSON includes p50/p95/p99 for each BrowserArena-style stage plus the
+raw per-iteration rows.
+
+### 3. Run With The BrowserArena Harness
+
+The headline rows above were produced with the BrowserArena `hello-browser`
+lifecycle against a self-hosted BaseLayer provider endpoint. Use the same
+topology when comparing numbers:
+
+- runner and provider in the same AWS region
+- target: Google
+- wait condition: `domcontentloaded`
+- runs: `100`
+- concurrency: `1`
+- no request blocking
+- async delete enabled for latency-style runs
+
+Shape:
+
+```bash
+BASELAYER_BASE_URL="http://<provider-host>:3000/v1" \
+npm run bench -- --provider=baselayer --benchmark=hello-browser --runs=100 --concurrency=1
+```
+
+Use a short smoke first:
+
+```bash
+BENCH_RUNS=1 npm run bench:provider-api
+BENCH_RUNS=5 npm run bench:provider-api
+BENCH_RUNS=100 npm run bench:provider-api
+```
+
+Only compare a `100`-run if the smoke runs are clean.
 
 ## Requirements
 
@@ -36,7 +151,7 @@ results are same-host or lab runs intended to guide runtime development.
 Windows and macOS are fine for editing, building TypeScript, and running unit
 tests that do not require Docker/KVM.
 
-## Quick Start
+## Local Quick Start
 
 Install dependencies:
 
@@ -44,15 +159,10 @@ Install dependencies:
 npm install
 ```
 
-Build:
+Build and test:
 
 ```bash
 npm run build
-```
-
-Run tests:
-
-```bash
 npm test
 ```
 
@@ -112,11 +222,8 @@ Example config files live in [`config`](./config).
 
 ## Documentation
 
-Start with [`docs/README.md`](./docs/README.md).
-
-Useful entry points:
-
 - [`docs/BENCHMARKS.md`](./docs/BENCHMARKS.md)
+- [`docs/browserarena-results.md`](./docs/browserarena-results.md)
 - [`docs/current-best-profiles.md`](./docs/current-best-profiles.md)
 - [`docs/profile-naming-system.md`](./docs/profile-naming-system.md)
 - [`docs/firecracker-phases.md`](./docs/firecracker-phases.md)

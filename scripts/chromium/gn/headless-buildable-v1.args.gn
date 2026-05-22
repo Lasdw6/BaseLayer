@@ -1,0 +1,28 @@
+# BaseLayer custom-shell profile: headless-buildable-v1.
+#
+# Intent: buildable source-built `headless_shell` A/B against the Playwright
+# binary on current Chromium without brittle GN subsystem disables. This is
+# the correct first source-built benchmark because it isolates source-build
+# overhead/benefit before adding revision-sensitive source patches.
+#
+# Fairness vs stock Playwright: that binary is typically PGO-optimized; keeping
+# chrome_pgo_phase = 0 can skew page_goto. For a fair comparison, generate a
+# profile and set chrome_pgo_phase = 2 plus the Chromium PGO args (see
+# custom-headless-shell-build.md) before treating source-build as a release
+# candidate.
+is_official_build = true
+is_component_build = false
+chrome_pgo_phase = 0
+symbol_level = 0
+blink_symbol_level = 0
+enable_nacl = false
+enable_widevine = false
+enable_hangout_services_extension = false
+enable_remoting = false
+use_kerberos = false
+treat_warnings_as_errors = false
+use_debug_fission = false
+dcheck_always_on = false
+disable_fieldtrial_testing_config = true
+enable_background_mode = false
+headless_use_embedded_resources = false

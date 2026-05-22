@@ -1,0 +1,27 @@
+# BaseLayer custom-shell profile: headless-startup-safe-v1.
+#
+# Intent: source-built `headless_shell` A/B with fewer GN-level assumptions
+# than `headless-startup-v1`. Current Chromium still wires service discovery
+# and GTK/GIO targets into the headless shell build graph, so this profile
+# keeps those defaults enabled and only trims broadly safe startup subsystems.
+is_official_build = true
+is_component_build = false
+chrome_pgo_phase = 0
+symbol_level = 0
+blink_symbol_level = 0
+enable_nacl = false
+enable_widevine = false
+enable_hangout_services_extension = false
+enable_remoting = false
+use_kerberos = false
+treat_warnings_as_errors = false
+use_debug_fission = false
+dcheck_always_on = false
+disable_fieldtrial_testing_config = true
+enable_background_mode = false
+headless_use_embedded_resources = false
+
+# Safe startup-oriented reductions that do not trip current Chromium service
+# discovery or GTK/GIO assertions.
+safe_browsing_mode = 0
+enable_reporting = false

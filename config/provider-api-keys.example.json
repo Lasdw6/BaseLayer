@@ -1,0 +1,10 @@
+[
+  {
+    "keyId": "local-dev",
+    "apiKey": "replace-me-with-a-long-random-secret",
+    "enabled": true,
+    "name": "Local development key",
+    "tenantId": "tenant-dev",
+    "allowedRegions": ["local"]
+  }
+]

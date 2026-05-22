@@ -1,0 +1,15 @@
+[
+  {
+    "hostId": "local-dev-host",
+    "apiUrl": "http://127.0.0.1:4000",
+    "region": "local",
+    "mode": "managed",
+    "enabled": true,
+    "labels": {
+      "environment": "dev"
+    },
+    "supportedRuntimeProfiles": [
+      "BaseLayer-Mew-firecracker-headless-shell"
+    ]
+  }
+]

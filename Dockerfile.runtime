@@ -1,0 +1,18 @@
+FROM mcr.microsoft.com/playwright:v1.58.2-noble
+
+WORKDIR /app
+
+COPY package.json package-lock.json tsconfig.json ./
+COPY src ./src
+
+RUN npm ci
+RUN npm run build
+
+ENV RUNTIME_PORT=3001
+ENV RUNTIME_CDP_PORT=9222
+ENV RUNTIME_HEALTH_PORT=8081
+ENV PLAYWRIGHT_WS_PATH=/playwright
+
+EXPOSE 3001 9222 8081
+
+CMD ["node", "dist/runtime/server.js"]

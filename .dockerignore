@@ -1,0 +1,12 @@
+node_modules/
+dist/
+data/
+.tmp/
+.tmp-gcp/
+.tmp-gcp*/
+.tmp-*/
+.tmp-logs/
+artifacts/
+*-sync.tar.gz
+.git/
+.gitignore

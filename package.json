@@ -1,0 +1,77 @@
+{
+  "name": "baselayer",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "BaseLayer — control plane and host runtime for headless browser hosting.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lasdw6/baselayer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Lasdw6/baselayer/issues"
+  },
+  "homepage": "https://github.com/Lasdw6/baselayer#readme",
+  "keywords": [
+    "browser-hosting",
+    "chromium",
+    "firecracker",
+    "playwright",
+    "microvm"
+  ],
+  "bin": {
+    "ssh-run": "./scripts/ssh-run.mjs",
+    "scp-run": "./scripts/ssh-run.mjs",
+    "cloud-run": "./scripts/cloud-run.mjs"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev:api": "tsx src/api/server.ts",
+    "dev:agent": "tsx src/node-agent/server.ts",
+    "dev:runtime": "tsx src/runtime/server.ts",
+    "bench:compare": "tsx src/bench/compare.ts",
+    "bench:latency": "tsx src/bench/latency.ts",
+    "bench:density": "tsx src/bench/density.ts",
+    "bench:matrix": "tsx src/bench/matrix.ts",
+    "bench:verify-firecracker": "tsx src/bench/verify-firecracker-assets.ts",
+    "bench:provider-api": "tsx src/bench/provider-api.ts",
+    "bench:provider-fluid-real": "tsx src/bench/provider-fluid-real.ts",
+    "bench:kernel-docker": "tsx src/bench/kernel-docker.ts",
+    "bench:optimizer": "tsx src/bench/optimizer.ts",
+    "bench:provider-scorecard": "tsx src/bench/provider-scorecard.ts",
+    "bench:browserless-local": "tsx src/bench/browserless-local.ts",
+    "bench:firecracker-wsl": "tsx src/bench/firecracker-wsl.ts",
+    "bench:firecracker-proof": "tsx src/bench/firecracker-proof.ts",
+    "bench:criu-proof": "tsx src/bench/criu-proof.ts",
+    "bench:lightpanda-smoke": "tsx src/bench/lightpanda-smoke.ts",
+    "bench:lightpanda-browserarena": "tsx src/bench/lightpanda-browserarena.ts",
+    "bench:real-usage": "tsx src/bench/real-usage.ts",
+    "bench:snapshot": "npm run build && tsx src/bench/snapshot.ts",
+    "bench:verify-defaults": "node scripts/bench/verify-benchmark-host-defaults.mjs",
+    "bench:summarize-phase": "node scripts/bench/adhoc/summarize-provider-phase-summary.mjs",
+    "start:api": "node dist/api/server.js",
+    "start:agent": "node dist/node-agent/server.js",
+    "start:runtime": "node dist/runtime/server.js",
+    "test": "vitest run && node scripts/bench/verify-benchmark-host-defaults.mjs",
+    "test:watch": "vitest",
+    "ssh-run": "node scripts/ssh-run.mjs",
+    "ssh:run": "node scripts/ssh-run.mjs",
+    "scp:run": "node scripts/ssh-run.mjs",
+    "remote:run": "node scripts/ssh-run.mjs",
+    "cloud-run": "node scripts/cloud-run.mjs",
+    "cloud:run": "node scripts/cloud-run.mjs"
+  },
+  "dependencies": {
+    "fastify": "^5.2.1",
+    "http-proxy": "^1.18.1",
+    "playwright-core": "1.58.2",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/http-proxy": "^1.17.17",
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
+  }
+}

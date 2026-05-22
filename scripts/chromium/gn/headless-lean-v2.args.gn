@@ -1,0 +1,37 @@
+# BaseLayer custom-shell profile: headless-lean-v2.
+#
+# Intent: strip more non-headless subsystems than `headless-minimal-v1` for
+# smaller binary and lower resident set. Use this when the goal is density,
+# not startup tail.
+#
+# PERFORMANCE NOTE: same PGO caveat as `headless-minimal-v1.args.gn`.
+#
+# GN ARG COMPATIBILITY: every arg below has existed in Chromium main for
+# multiple years. Still, validate against the exact Chromium revision you
+# checked out before trusting the build; `gn gen` will fail loudly if any
+# arg is unknown.
+is_official_build = true
+is_component_build = false
+chrome_pgo_phase = 0
+symbol_level = 0
+blink_symbol_level = 0
+enable_nacl = false
+enable_widevine = false
+enable_hangout_services_extension = false
+enable_remoting = false
+enable_mdns = false
+use_kerberos = false
+treat_warnings_as_errors = false
+use_debug_fission = false
+dcheck_always_on = false
+disable_fieldtrial_testing_config = true
+enable_background_mode = false
+headless_use_embedded_resources = false
+
+# --- lean-v2 additions beyond headless-minimal-v1 ---
+# Extensions, print preview, GIO desktop integration, and safe-browsing are
+# all unreachable from headless_shell but still linked in by default.
+enable_extensions = false
+enable_print_preview = false
+use_gio = false
+safe_browsing_mode = 0

@@ -1,0 +1,39 @@
+# BaseLayer custom-shell profile: headless-startup-v1.
+#
+# Intent: focus on startup-path cost. Keeps the default `is_official_build`
+# release shape but trims services that initialize during browser startup
+# without being reachable from a headless CDP session.
+#
+# Prefer this over `headless-lean-v2` when you care about cold-start
+# `create` / `connect` latency rather than binary size or RSS.
+#
+# PERFORMANCE NOTE: same PGO caveat as `headless-minimal-v1.args.gn`.
+#
+# GN ARG COMPATIBILITY: `safe_browsing_mode` and `use_gio` have been stable
+# for years. `enable_reporting` has existed in Chromium main but is a
+# newer arg; if `gn gen` complains on a pinned older revision, remove the
+# offending line or use `BASELAYER_CHROMIUM_EXTRA_GN_ARGS` to override.
+is_official_build = true
+is_component_build = false
+chrome_pgo_phase = 0
+symbol_level = 0
+blink_symbol_level = 0
+enable_nacl = false
+enable_widevine = false
+enable_hangout_services_extension = false
+enable_remoting = false
+enable_mdns = false
+use_kerberos = false
+treat_warnings_as_errors = false
+use_debug_fission = false
+dcheck_always_on = false
+disable_fieldtrial_testing_config = true
+enable_background_mode = false
+headless_use_embedded_resources = false
+
+# --- startup-v1 additions beyond headless-minimal-v1 ---
+# Disable subsystems whose service/feature initialization runs at startup
+# even when idle in a headless session.
+safe_browsing_mode = 0
+use_gio = false
+enable_reporting = false

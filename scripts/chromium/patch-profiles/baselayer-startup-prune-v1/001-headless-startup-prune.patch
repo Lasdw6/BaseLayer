@@ -1,0 +1,87 @@
+diff --git a/headless/lib/browser/headless_browser_context_impl.cc b/headless/lib/browser/headless_browser_context_impl.cc
+index f664e9994a..c7cdbdc13f 100644
+--- a/headless/lib/browser/headless_browser_context_impl.cc
++++ b/headless/lib/browser/headless_browser_context_impl.cc
+@@ -78,17 +78,13 @@ HeadlessBrowserContextImpl::HeadlessBrowserContextImpl(
+           : path_;
+   request_context_manager_ = std::make_unique<HeadlessRequestContextManager>(
+       context_options_.get(), user_data_path, browser->os_crypt_async());
+-  profile_metrics::SetBrowserProfileType(
+-      this, IsOffTheRecord() ? profile_metrics::BrowserProfileType::kIncognito
+-                             : profile_metrics::BrowserProfileType::kRegular);
+ #if defined(HEADLESS_USE_POLICY)
+   if (PrefService* pref_service = browser->GetPrefs())
+     user_prefs::UserPrefs::Set(this, pref_service);
+ #endif  // defined(HEADLESS_USE_POLICY)
+ 
+-  // Ensure the delegate is initialized early to give it time to load its
+-  // persistence.
+-  GetOriginTrialsControllerDelegate();
++  // BaseLayer sessions are ephemeral; origin trials persistence can initialize
++  // lazily if a page actually needs it.
+ }
+ 
+ HeadlessBrowserContextImpl::~HeadlessBrowserContextImpl() {
+diff --git a/headless/lib/browser/headless_browser_impl.cc b/headless/lib/browser/headless_browser_impl.cc
+index f673a364a9..2a857db999 100644
+--- a/headless/lib/browser/headless_browser_impl.cc
++++ b/headless/lib/browser/headless_browser_impl.cc
+@@ -412,13 +412,7 @@ void HeadlessBrowserImpl::CreateOSCryptAsync() {
+       /*precedence=*/10u,
+       std::make_unique<os_crypt_async::KeychainKeyProvider>()));
+ #elif BUILDFLAG(IS_LINUX) && BUILDFLAG(USE_DBUS)
+-  base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
+-  const auto password_store =
+-      cmd_line->GetSwitchValueASCII(password_manager::kPasswordStore);
+-  providers.emplace_back(
+-      /*precedence=*/10u,
+-      std::make_unique<os_crypt_async::FreedesktopSecretKeyProvider>(
+-          password_store, kHeadlessProductName, nullptr));
++  // Ephemeral BaseLayer headless sessions use the POSIX provider below.
+ #endif
+ 
+ #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
+diff --git a/headless/lib/browser/headless_devtools.cc b/headless/lib/browser/headless_devtools.cc
+index b615930a37..4530441afe 100644
+--- a/headless/lib/browser/headless_devtools.cc
++++ b/headless/lib/browser/headless_devtools.cc
+@@ -45,8 +45,6 @@ class TCPServerSocketFactory : public content::DevToolsSocketFactory {
+     if (socket->ListenWithAddressAndPort("127.0.0.1", port, kBackLog) ==
+         net::OK)
+       return socket;
+-    if (socket->ListenWithAddressAndPort("::1", port, kBackLog) == net::OK)
+-      return socket;
+     return nullptr;
+   }
+ 
+diff --git a/headless/lib/headless_content_main_delegate.cc b/headless/lib/headless_content_main_delegate.cc
+index 36afd34701..89e46fcda2 100644
+--- a/headless/lib/headless_content_main_delegate.cc
++++ b/headless/lib/headless_content_main_delegate.cc
+@@ -150,8 +150,6 @@ void InitializeResourceBundle(const base::CommandLine& command_line) {
+       resource_dir.Append(FILE_PATH_LITERAL("resources.pak"));
+   base::FilePath chrome_100_pak =
+       resource_dir.Append(FILE_PATH_LITERAL("chrome_100_percent.pak"));
+-  base::FilePath chrome_200_pak =
+-      resource_dir.Append(FILE_PATH_LITERAL("chrome_200_percent.pak"));
+ 
+ #if BUILDFLAG(IS_MAC) && !defined(COMPONENT_BUILD)
+   // In non component builds, check if fall back in Resources/ folder is
+@@ -161,8 +159,6 @@ void InitializeResourceBundle(const base::CommandLine& command_line) {
+         resource_dir.Append(FILE_PATH_LITERAL("Resources/resources.pak"));
+     chrome_100_pak = resource_dir.Append(
+         FILE_PATH_LITERAL("Resources/chrome_100_percent.pak"));
+-    chrome_200_pak = resource_dir.Append(
+-        FILE_PATH_LITERAL("Resources/chrome_200_percent.pak"));
+   }
+ #endif
+ 
+@@ -170,8 +166,6 @@ void InitializeResourceBundle(const base::CommandLine& command_line) {
+       resources_pak, ui::kScaleFactorNone);
+   ui::ResourceBundle::GetSharedInstance().AddDataPackFromPath(chrome_100_pak,
+                                                               ui::k100Percent);
+-  ui::ResourceBundle::GetSharedInstance().AddDataPackFromPath(chrome_200_pak,
+-                                                              ui::k200Percent);
+ #endif
+ }
+ 

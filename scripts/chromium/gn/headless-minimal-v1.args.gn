@@ -1,0 +1,30 @@
+# BaseLayer custom-shell profile: headless-minimal-v1 (default).
+#
+# Intent: the smallest safe delta from upstream `is_official_build = true`
+# that still compiles a headless_shell binary reliably across recent
+# Chromium revisions.
+#
+# PERFORMANCE NOTE:
+#   `chrome_pgo_phase = 0` disables profile-guided optimization. Stock
+#   Playwright `chrome-headless-shell` ships with PGO enabled, so a custom
+#   build with this file can be 5-10% slower on navigation-heavy workloads
+#   than the Playwright baseline purely because of PGO. If you want a fair
+#   A/B against stock Playwright, build a PGO-enabled variant first
+#   (see `custom-headless-shell-build.md` and the ccache + PGO notes).
+is_official_build = true
+is_component_build = false
+chrome_pgo_phase = 0
+symbol_level = 0
+blink_symbol_level = 0
+enable_nacl = false
+enable_widevine = false
+enable_hangout_services_extension = false
+enable_remoting = false
+enable_mdns = false
+use_kerberos = false
+treat_warnings_as_errors = false
+use_debug_fission = false
+dcheck_always_on = false
+disable_fieldtrial_testing_config = true
+enable_background_mode = false
+headless_use_embedded_resources = false

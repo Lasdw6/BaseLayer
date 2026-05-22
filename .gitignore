@@ -1,0 +1,41 @@
+# Dependencies & build output
+node_modules/
+dist/
+
+# Local runtime data and downloaded artifacts (not versioned)
+data/
+artifacts/
+
+# Local deployment config and secrets. Commit *.example.json instead.
+config/provider-hosts.json
+config/provider-api-keys.json
+.env
+.env.*
+
+# Scratch files and local-only experiments (never commit)
+.tmp-*
+.tmp/
+*.pem
+*.key
+*.p12
+*.crt
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# Ad-hoc archives at repo root
+*.tar.gz
+*.zip
+
+# Legacy patterns (kept for older local trees)
+*-sync.tar.gz
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+wget-log*
+
+vendor/*
+.gstack/

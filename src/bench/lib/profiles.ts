@@ -1519,6 +1519,119 @@ export const SUPPORTED_BENCHMARK_PROFILES = BENCHMARK_PROFILES.filter(
 );
 
 const LEGACY_SUPPORTED_PROFILE_ALIASES: Record<string, SupportedProfileId> = {
+  "baselayer-container-generic": "BaseLayer-Bulbasaur-generic-container",
+  "baselayer-managed-node": "BaseLayer-Charizard-managed-node",
+  "baselayer-managed-node-cold": "BaseLayer-Venusaur-managed-cold-node",
+  "baselayer-managed-node-dense-384mb": "BaseLayer-Squirtle-managed-dense-384mb",
+  "baselayer-managed-node-large-shm": "BaseLayer-Wartortle-managed-large-shm",
+  "baselayer-firecracker-headless-shell": "BaseLayer-Mew-firecracker-headless-shell",
+  "baselayer-firecracker-vanilla": "BaseLayer-Ivysaur-firecracker-vanilla",
+  "baselayer-firecracker-headless-shell-512mb":
+    "BaseLayer-Blastoise-firecracker-slim-512",
+  "baselayer-firecracker-headless-shell-384mb":
+    "BaseLayer-Caterpie-firecracker-slim-384",
+  "baselayer-firecracker-headless-shell-1vcpu":
+    "BaseLayer-Metapod-firecracker-one-vcpu",
+  "baselayer-firecracker-headless-shell-cdp-warm":
+    "BaseLayer-Butterfree-firecracker-cdp-warm",
+  "baselayer-firecracker-headless-shell-context-warm":
+    "BaseLayer-Weedle-firecracker-context-warm",
+  "baselayer-firecracker-headless-shell-no-warm":
+    "BaseLayer-Kakuna-firecracker-no-warm",
+  "baselayer-firecracker-full-chromium": "BaseLayer-Mewtwo-full-chromium",
+  "baselayer-firecracker-full-chromium-512mb":
+    "BaseLayer-Beedrill-full-chromium-512",
+  "baselayer-firecracker-network-validate": "BaseLayer-Pidgey-network-validate",
+  "baselayer-firecracker-fluid-hybrid": "BaseLayer-Pidgeotto-fluid-hybrid",
+  "baselayer-firecracker-fluid-always": "BaseLayer-Pidgeot-fluid-always",
+  "baselayer-firecracker-headless-shell-fast-slot-reuse":
+    "BaseLayer-Rattata-fast-slot-reuse",
+  "baselayer-firecracker-headless-shell-density-512mb-1vcpu":
+    "BaseLayer-Raticate-density-512-1vcpu",
+  "baselayer-firecracker-fluid-density": "BaseLayer-Spearow-fluid-density",
+  "baselayer-firecracker-headless-shell-navcap-12":
+    "BaseLayer-Fearow-density-navcap-12",
+  "baselayer-firecracker-headless-shell-navcap-16":
+    "BaseLayer-Ekans-density-navcap-16",
+  "baselayer-firecracker-headless-shell-navcap-20":
+    "BaseLayer-Arbok-density-navcap-20",
+  "baselayer-firecracker-headless-shell-mem1280":
+    "BaseLayer-Raichu-density-mem1280",
+  "baselayer-firecracker-headless-shell-mem1536":
+    "BaseLayer-Pikachu-density-mem1536",
+  "baselayer-firecracker-headless-shell-mem1792":
+    "BaseLayer-Sandshrew-density-mem1792",
+  "baselayer-firecracker-headless-shell-mem2048":
+    "BaseLayer-Sandslash-density-mem2048",
+  "baselayer-firecracker-headless-shell-navcap16-mem1536":
+    "BaseLayer-Nidoran-F-density-navcap16-mem1536",
+  "baselayer-firecracker-headless-shell-navcap16-mem2048":
+    "BaseLayer-Nidorina-density-navcap16-mem2048",
+  "baselayer-firecracker-fluid-navcap-16":
+    "BaseLayer-Nidoqueen-fluid-density-navcap-16",
+  "baselayer-firecracker-fluid-cgroups":
+    "BaseLayer-Nidoran-M-fluid-density-cgroups",
+  "baselayer-firecracker-headless-shell-launchcap-12":
+    "BaseLayer-Nidorino-density-launch-cap-12",
+  "baselayer-firecracker-headless-shell-navcap-8":
+    "BaseLayer-Nidoking-density-navcap-8",
+  "baselayer-firecracker-headless-shell-2vcpu-navcap-12":
+    "BaseLayer-Clefairy-2vcpu-navcap-12",
+  "baselayer-firecracker-headless-shell-2vcpu-navcap-16":
+    "BaseLayer-Clefable-2vcpu-navcap-16",
+  "baselayer-firecracker-headless-shell-cdp-warm-density":
+    "BaseLayer-Vulpix-density-cdp-warm",
+  "baselayer-firecracker-headless-shell-context-warm-density":
+    "BaseLayer-Ninetales-density-context-warm",
+  "baselayer-firecracker-headless-shell-target-warm-density":
+    "BaseLayer-Jigglypuff-density-target-warm",
+  "baselayer-firecracker-headless-shell-blank-warm-density":
+    "BaseLayer-Wigglytuff-density-blank-warm",
+  "baselayer-firecracker-headless-shell-cdp-warm-navcap-8":
+    "BaseLayer-Zubat-density-cdp-warm-navcap-8",
+  "baselayer-firecracker-headless-shell-kernel-goto":
+    "BaseLayer-Oddish-kernel-goto",
+  "baselayer-firecracker-headless-shell-kernel-goto-lite":
+    "BaseLayer-Gloom-kernel-goto-lite",
+  "baselayer-firecracker-headless-shell-kernel-feature-prune":
+    "BaseLayer-Vileplume-kernel-feature-prune",
+  "baselayer-firecracker-headless-shell-startup-prune":
+    "BaseLayer-Gengar-kernel-startup-prune",
+  "baselayer-firecracker-headless-shell-startup-prune-automation-navcap-16":
+    "BaseLayer-Machop-gengar-automation-navcap-16",
+  "baselayer-firecracker-headless-shell-startup-prune-network-calm-navcap-16":
+    "BaseLayer-Machoke-gengar-network-calm-navcap-16",
+  "baselayer-firecracker-headless-shell-kernel-goto-ipv6off":
+    "BaseLayer-Paras-kernel-goto-ipv6off",
+  "baselayer-firecracker-headless-shell-kernel-balanced":
+    "BaseLayer-Dragonite-kernel-balanced",
+  "baselayer-firecracker-headless-shell-kernel-goto-cdp-warm":
+    "BaseLayer-Parasect-kernel-goto-cdp-warm",
+  "baselayer-firecracker-headless-shell-startup-prune-lite":
+    "BaseLayer-Krabby-kernel-startup-prune-lite",
+  "baselayer-firecracker-headless-shell-kernel-balanced-lite":
+    "BaseLayer-Kingler-kernel-balanced-lite",
+  "baselayer-firecracker-headless-shell-async-startup-prune":
+    "BaseLayer-Horsea-async-gengar-merge",
+  "baselayer-firecracker-headless-shell-async-kernel-balanced":
+    "BaseLayer-Seadra-async-dragonite-merge",
+  "baselayer-firecracker-headless-shell-async-kernel-goto-lite":
+    "BaseLayer-Goldeen-async-gloom-merge",
+  "baselayer-firecracker-headless-shell-async-manual-startup-prune":
+    "BaseLayer-Poliwag-async-manual-gengar",
+  "baselayer-firecracker-headless-shell-async-manual-kernel-balanced":
+    "BaseLayer-Poliwhirl-async-manual-dragonite",
+  "baselayer-firecracker-custom-shell": "BaseLayer-Abra-custom-shell-baseline",
+  "baselayer-firecracker-custom-shell-startup-network":
+    "BaseLayer-Staryu-custom-shell-startup-network",
+  "baselayer-firecracker-custom-shell-startup-prune":
+    "BaseLayer-Kadabra-custom-shell-startup-prune",
+  "baselayer-firecracker-custom-shell-async":
+    "BaseLayer-Alakazam-custom-shell-async-manual",
+  "baselayer-firecracker-custom-shell-async-merge":
+    "BaseLayer-Starmie-async-custom-shell-merge",
+  "baselayer-firecracker-custom-shell-kernel-balanced":
+    "BaseLayer-Ditto-custom-shell-kernel-balanced",
   "profile-a-generic-container": "BaseLayer-Bulbasaur-generic-container",
   "profile-b-optimized-node": "BaseLayer-Charizard-managed-node",
   "profile-c-firecracker-snapshot": "BaseLayer-Mew-firecracker-headless-shell",

@@ -6,7 +6,7 @@ Note:
 - The current repo decision is:
   - baseline `chromium-headless-shell` remains the default browser runtime
   - full Chromium is experimental
-- the canonical `BaseLayer-Mew-firecracker-headless-shell` sequential path uses **async delete**; older sync-delete rows remain useful only as diagnostics
+- the canonical `baselayer-firecracker-headless-shell` sequential path uses **async delete**; older sync-delete rows remain useful only as diagnostics
 - The latest clean `5`-run baseline rerun on the current KVM testbed was approximately:
   - create `534 ms`
   - connect `113 ms`
@@ -119,7 +119,7 @@ the repo has been targeting:
 - benchmark: BrowserArena `hello-browser`
 - wait semantics: `domcontentloaded`
 - runs: `100`
-- provider runtime: `BaseLayer-Vulpix-density-cdp-warm`
+- provider runtime: `baselayer-firecracker-headless-shell-cdp-warm-density`
 
 Result:
 

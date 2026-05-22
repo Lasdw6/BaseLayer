@@ -9,7 +9,7 @@
       "environment": "dev"
     },
     "supportedRuntimeProfiles": [
-      "BaseLayer-Mew-firecracker-headless-shell"
+      "baselayer-firecracker-headless-shell"
     ]
   }
 ]

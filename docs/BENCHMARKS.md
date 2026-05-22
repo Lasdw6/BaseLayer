@@ -3,7 +3,7 @@
 The repo now includes a benchmark suite for the browser-worker profiles described in
 [`provider-target-and-benchmark-plan.md`](./provider-target-and-benchmark-plan.md).
 
-Canonical profile IDs now follow the naming system in [profile-naming-system.md](./profile-naming-system.md). Legacy `profile-*` IDs still resolve as compatibility aliases, but new commands and docs should prefer the `BaseLayer-*` names.
+Public profile IDs follow [profile-naming-system.md](./profile-naming-system.md). Legacy `BaseLayer-<codename>-...` and `profile-*` IDs still resolve as compatibility aliases, but new commands and docs should prefer descriptive IDs such as `baselayer-firecracker-headless-shell`.
 
 ## Supported Profiles
 
@@ -15,7 +15,7 @@ These profiles are executable in the current repo:
 - `BaseLayer-Charizard-managed-node`
   - managed mode
   - browser-aware node-agent reference
-- `BaseLayer-Mew-firecracker-headless-shell`
+- `baselayer-firecracker-headless-shell`
   - firecracker mode
   - Linux/KVM-only snapshot-restore proof/integration profile
 - `BaseLayer-Ivysaur-firecracker-vanilla`
@@ -30,25 +30,25 @@ These profiles are executable in the current repo:
 - `BaseLayer-Wartortle-managed-large-shm`
   - managed mode
   - compatibility profile with larger `/dev/shm`
-- `BaseLayer-Blastoise-firecracker-slim-512`
+- `baselayer-firecracker-headless-shell-512mb`
   - firecracker mode
   - 512MB hardened-tier memory experiment
-- `BaseLayer-Caterpie-firecracker-slim-384`
+- `baselayer-firecracker-headless-shell-384mb`
   - firecracker mode
   - 384MB lower-bound memory experiment
-- `BaseLayer-Metapod-firecracker-one-vcpu`
+- `baselayer-firecracker-headless-shell-1vcpu`
   - firecracker mode
   - one-vCPU packing experiment
-- `BaseLayer-Butterfree-firecracker-cdp-warm`
+- `baselayer-firecracker-headless-shell-cdp-warm`
   - firecracker mode
   - CDP-ready snapshot warm-level control
-- `BaseLayer-Weedle-firecracker-context-warm`
+- `baselayer-firecracker-headless-shell-context-warm`
   - firecracker mode
   - warmed-context snapshot experiment
-- `BaseLayer-Kakuna-firecracker-no-warm`
+- `baselayer-firecracker-headless-shell-no-warm`
   - firecracker mode
   - no warm-page snapshot control
-- `BaseLayer-Mewtwo-full-chromium`
+- `baselayer-firecracker-full-chromium`
   - firecracker mode
   - full Chromium guest comparison
 - `BaseLayer-Beedrill-full-chromium-512`
@@ -66,10 +66,10 @@ These profiles are executable in the current repo:
 - `BaseLayer-Rattata-fast-slot-reuse`
   - firecracker mode
   - skips helper cleanup grace on clean slots to test create-path overhead
-- `BaseLayer-Raticate-density-512-1vcpu`
+- `baselayer-firecracker-headless-shell-density-512mb-1vcpu`
   - firecracker mode
   - 512MB/1vCPU density profile with fast slot reuse
-- `BaseLayer-Spearow-fluid-density`
+- `baselayer-firecracker-fluid-density`
   - firecracker mode
   - 512MB/1vCPU density profile with hybrid fluid CPU policy
 - `BaseLayer-Oddish-kernel-goto`
@@ -163,7 +163,7 @@ Firecracker profile in the shared harness:
 
 ```bash
 export BENCH_ENABLE_FIRECRACKER="1"
-export BENCH_PROFILE_IDS="BaseLayer-Mew-firecracker-headless-shell"
+export BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell"
 export FIRECRACKER_KERNEL_PATH="$PWD/artifacts/firecracker/vmlinux"
 export FIRECRACKER_ROOTFS_PATH="$PWD/artifacts/firecracker/rootfs.ext4"
 export FIRECRACKER_SNAPSHOT_DIR="$PWD/data/firecracker/snapshots"
@@ -182,7 +182,7 @@ Firecracker-backed node-agent mode behind the normal session API:
 
 ```bash
 export BENCH_ENABLE_FIRECRACKER="1"
-export BENCH_PROFILE_IDS="BaseLayer-Mew-firecracker-headless-shell"
+export BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell"
 export FIRECRACKER_KERNEL_PATH="$PWD/artifacts/firecracker/vmlinux"
 export FIRECRACKER_ROOTFS_PATH="$PWD/artifacts/firecracker/rootfs.ext4"
 export FIRECRACKER_SNAPSHOT_DIR="$PWD/data/firecracker/snapshots"

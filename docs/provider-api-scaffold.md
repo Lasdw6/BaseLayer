@@ -149,7 +149,7 @@ export NODE_AGENT_PUBLIC_API_URL="http://10.0.0.24:4000"
 export BASELAYER_REGION="us-east-2"
 export BASELAYER_INSTANCE_TYPE="m5zn.metal"
 export BASELAYER_HOST_LABELS='{"provider":"aws","role":"provider-host"}'
-export BASELAYER_SUPPORTED_RUNTIME_PROFILES="BaseLayer-Mew-firecracker-headless-shell,BaseLayer-Gengar-kernel-startup-prune"
+export BASELAYER_SUPPORTED_RUNTIME_PROFILES="baselayer-firecracker-headless-shell,baselayer-firecracker-headless-shell-startup-prune"
 npm run dev:agent
 ```
 
@@ -257,7 +257,7 @@ That run validated the new warm-pool lane on a real Firecracker host with split 
 
 - the public `/v1` listener saw host registration written by the internal listener without a restart
 - the host allowlist was enforced with a real host-specific entry
-- the first provider create on `BaseLayer-Mew-firecracker-headless-shell` was a real warm borrow:
+- the first provider create on `baselayer-firecracker-headless-shell` was a real warm borrow:
   - control-plane total about `39 ms`
   - node-agent create about `36 ms`
   - `launchTimings.totalMs = 0`
@@ -287,7 +287,7 @@ That follow-up is now revalidated on a paid cloud host in
 
 Latest optimized provider/API result:
 
-- `BaseLayer-Mew-firecracker-headless-shell`
+- `baselayer-firecracker-headless-shell`
 - real Google
 - `domcontentloaded`
 - direct same-region provider path p50 about `850 ms`

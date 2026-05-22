@@ -27,7 +27,7 @@ interface SiteRunResult {
 }
 
 const profileId = (process.env["REAL_USAGE_PROFILE_ID"] ??
-  "BaseLayer-Mew-firecracker-headless-shell") as SupportedProfileId;
+  "baselayer-firecracker-headless-shell") as SupportedProfileId;
 const reportDir = process.env["REAL_USAGE_REPORT_DIR"] ?? path.join(process.cwd(), "data", "benchmarks");
 const reportPath =
   process.env["REAL_USAGE_REPORT_PATH"] ??

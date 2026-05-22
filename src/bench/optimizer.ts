@@ -51,7 +51,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "baseline-c-1vcpu-1024",
     description: "Current density default: headless-shell snapshot, 1 vCPU, 1024 MB, async delete.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Mew-firecracker-headless-shell",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell",
       BENCH_FIRECRACKER_GUEST_VCPU_COUNT: "1",
       BENCH_FIRECRACKER_GUEST_MEMORY_MB: "1024",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
@@ -62,7 +62,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "baseline-c-1536mb",
     description: "Raise guest memory to check whether RAM reduces goto tail without adding too much launch pressure.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Mew-firecracker-headless-shell",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell",
       BENCH_FIRECRACKER_GUEST_VCPU_COUNT: "1",
       BENCH_FIRECRACKER_GUEST_MEMORY_MB: "1536",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
@@ -73,7 +73,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "baseline-c-active-nav-cap-16",
     description: "Cap active navigation to reduce host run-queue pressure at density.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Mew-firecracker-headless-shell",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell",
       BENCH_FIRECRACKER_GUEST_VCPU_COUNT: "1",
       BENCH_FIRECRACKER_GUEST_MEMORY_MB: "1024",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
@@ -113,7 +113,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "fluid-z-density-1024",
     description: "Density-oriented fluid profile with memory raised to avoid known 512 MB Chrome OOM.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Spearow-fluid-density",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-fluid-density",
       BENCH_FCFLUIDDENSE_GUEST_MEMORY_MB: "1024",
       FIRECRACKER_DYNAMIC_CPU_POLICY: "1",
       FIRECRACKER_DYNAMIC_CPU_MODE: "hybrid",
@@ -189,7 +189,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "density-navcap16-mem1536",
     description: "Dedicated profile BE: nav cap 16 + 1536 MB RAM.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Nidoran-F-density-navcap16-mem1536",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell-navcap16-mem1536",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
       BENCH_FIRECRACKER_ENABLE_INTERNET_EGRESS: "1",
     },
@@ -216,7 +216,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "fluid-density-cgroups",
     description: "Dedicated profile BG: fluid hybrid with cgroups (cpu.weight path); use on fixed hosts only.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Nidoran-M-fluid-density-cgroups",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-fluid-cgroups",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
       BENCH_FIRECRACKER_ENABLE_INTERNET_EGRESS: "1",
     },
@@ -261,7 +261,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "density-cdp-warm-profile-bp",
     description: "Dedicated profile BP: 1 vCPU CDP-only warm snapshot.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Vulpix-density-cdp-warm",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell-cdp-warm-density",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
       BENCH_FIRECRACKER_ENABLE_INTERNET_EGRESS: "1",
     },
@@ -279,7 +279,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "density-target-warm-profile-br",
     description: "Dedicated profile BR: 1 vCPU target-only warm snapshot.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Jigglypuff-density-target-warm",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell-target-warm-density",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
       BENCH_FIRECRACKER_ENABLE_INTERNET_EGRESS: "1",
     },
@@ -288,7 +288,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "density-blank-warm-profile-bs",
     description: "Dedicated profile BS: 1 vCPU blank-page warm snapshot.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Wigglytuff-density-blank-warm",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell-blank-warm-density",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
       BENCH_FIRECRACKER_ENABLE_INTERNET_EGRESS: "1",
     },
@@ -297,7 +297,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "density-cdp-warm-nav8-profile-bt",
     description: "Dedicated profile BT: 1 vCPU CDP-warm snapshot with nav cap 8.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Zubat-density-cdp-warm-navcap-8",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell-cdp-warm-navcap-8",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
       BENCH_FIRECRACKER_ENABLE_INTERNET_EGRESS: "1",
     },
@@ -333,7 +333,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "kernel-startup-prune-profile-bz",
     description: "Dedicated profile BZ: Kernel-style startup/service pruning with baseline-like feature flags.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Gengar-kernel-startup-prune",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell-startup-prune",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
       BENCH_FIRECRACKER_ENABLE_INTERNET_EGRESS: "1",
     },
@@ -351,7 +351,7 @@ const safeSeedCandidates: OptimizerCandidate[] = [
     id: "kernel-balanced-profile-ca",
     description: "Dedicated profile CA: balanced Kernel-style startup pruning plus a curated disable-features bundle.",
     env: {
-      BENCH_PROFILE_IDS: "BaseLayer-Dragonite-kernel-balanced",
+      BENCH_PROFILE_IDS: "baselayer-firecracker-headless-shell-kernel-balanced",
       CONTROL_PLANE_ASYNC_SESSION_DELETE: "1",
       BENCH_FIRECRACKER_ENABLE_INTERNET_EGRESS: "1",
     },

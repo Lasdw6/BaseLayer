@@ -112,6 +112,7 @@ const requestedProfileIds = requestedProfileIdsRaw
 const requestedProfileIdsSet = new Set(requestedProfileIds);
 const isOptimizedVsVanillaCompare =
   (requestedProfileIdsSet.has("BaseLayer-Mew-firecracker-headless-shell") ||
+    requestedProfileIdsSet.has("baselayer-firecracker-headless-shell") ||
     requestedProfileIdsSet.has("profile-c-firecracker-snapshot")) &&
   (requestedProfileIdsSet.has("BaseLayer-Ivysaur-firecracker-vanilla") ||
     requestedProfileIdsSet.has("profile-d-firecracker-vanilla"));

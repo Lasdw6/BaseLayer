@@ -6,12 +6,12 @@ These profiles are scaffolds for VM and bare-metal benchmark runs. They are inte
 
 Canonical profile IDs now live in [profile-naming-system.md](./profile-naming-system.md). The older `profile-*` IDs are still accepted as legacy aliases, but new commands should use the `BaseLayer-*` names.
 
-For the prioritized list of which experimental profiles to actually rerun next (and why), see the **Suggested Next Optimizations** section of [current-best-profiles.md](./current-best-profiles.md). In particular: the cgroup `subtree_control` propagation fix on 2026-04-16 unblocks meaningful retests of `BaseLayer-Pidgeotto-fluid-hybrid`, `BaseLayer-Pidgeot-fluid-always`, and `BaseLayer-Spearow-fluid-density`, which were previously rejected on the renice-only fallback path.
+For the prioritized list of which experimental profiles to actually rerun next (and why), see the **Suggested Next Optimizations** section of [current-best-profiles.md](./current-best-profiles.md). In particular: the cgroup `subtree_control` propagation fix on 2026-04-16 unblocks meaningful retests of `baselayer-firecracker-fluid-hybrid`, `baselayer-firecracker-fluid-always`, and `baselayer-firecracker-fluid-density`, which were previously rejected on the renice-only fallback path.
 
 Use them with:
 
 ```bash
-export BENCH_PROFILE_IDS="BaseLayer-Blastoise-firecracker-slim-512"
+export BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell-512mb"
 npm run bench:latency
 ```
 
@@ -34,30 +34,30 @@ Each new Firecracker variant uses its own snapshot name and `data/firecracker/*-
 | `BaseLayer-Venusaur-managed-cold-node`          | managed     | Disable warm pool to isolate cold burst behavior and warm-pool benefit.                              |
 | `BaseLayer-Squirtle-managed-dense-384mb`        | managed     | Tighter memory, `/dev/shm`, and renderer budgets for higher density.                                 |
 | `BaseLayer-Wartortle-managed-large-shm`         | managed     | Larger `/dev/shm` and renderer budget for heavier compatibility pages.                               |
-| `BaseLayer-Blastoise-firecracker-slim-512`      | firecracker | Headless-shell microVM at `512 MB` to test hardened-tier economics.                                  |
-| `BaseLayer-Caterpie-firecracker-slim-384`       | firecracker | Headless-shell microVM at `384 MB` to find the lower memory bound.                                   |
-| `BaseLayer-Metapod-firecracker-one-vcpu`        | firecracker | Headless-shell microVM at `1 vCPU` to test CPU packing and navigation tails.                         |
-| `BaseLayer-Butterfree-firecracker-cdp-warm`     | firecracker | Snapshot at CDP-ready only; control for page/context warmup.                                         |
-| `BaseLayer-Weedle-firecracker-context-warm`     | firecracker | Snapshot with a warmed Playwright context; test connect/goto tradeoff.                               |
-| `BaseLayer-Kakuna-firecracker-no-warm`          | firecracker | Disable warm-page work; isolate warm snapshot overhead.                                              |
-| `BaseLayer-Vulpix-density-cdp-warm`             | firecracker | One-vCPU CDP-warm density lane; latest same-host page-ready winner over `BaseLayer-Mew` through `c24`. |
-| `BaseLayer-Jigglypuff-density-target-warm`      | firecracker | One-vCPU page-ready lane with only a pre-created DevTools target.                                    |
-| `BaseLayer-Wigglytuff-density-blank-warm`       | firecracker | One-vCPU page-ready lane with a created context and blank page, but no synthetic navigation.         |
-| `BaseLayer-Zubat-density-cdp-warm-navcap-8`     | firecracker | CDP-warm plus conservative navigation admission to separate snapshot benefit from renderer contention. |
-| `BaseLayer-Mewtwo-full-chromium`                | firecracker | Full Chromium guest via `artifacts/firecracker/rootfs-chromium.ext4`.                                |
+| `baselayer-firecracker-headless-shell-512mb`      | firecracker | Headless-shell microVM at `512 MB` to test hardened-tier economics.                                  |
+| `baselayer-firecracker-headless-shell-384mb`       | firecracker | Headless-shell microVM at `384 MB` to find the lower memory bound.                                   |
+| `baselayer-firecracker-headless-shell-1vcpu`        | firecracker | Headless-shell microVM at `1 vCPU` to test CPU packing and navigation tails.                         |
+| `baselayer-firecracker-headless-shell-cdp-warm`     | firecracker | Snapshot at CDP-ready only; control for page/context warmup.                                         |
+| `baselayer-firecracker-headless-shell-context-warm`     | firecracker | Snapshot with a warmed Playwright context; test connect/goto tradeoff.                               |
+| `baselayer-firecracker-headless-shell-no-warm`          | firecracker | Disable warm-page work; isolate warm snapshot overhead.                                              |
+| `baselayer-firecracker-headless-shell-cdp-warm-density`             | firecracker | One-vCPU CDP-warm density lane; latest same-host page-ready winner over `baselayer-firecracker-headless-shell` through `c24`. |
+| `baselayer-firecracker-headless-shell-target-warm-density`      | firecracker | One-vCPU page-ready lane with only a pre-created DevTools target.                                    |
+| `baselayer-firecracker-headless-shell-blank-warm-density`       | firecracker | One-vCPU page-ready lane with a created context and blank page, but no synthetic navigation.         |
+| `baselayer-firecracker-headless-shell-cdp-warm-navcap-8`     | firecracker | CDP-warm plus conservative navigation admission to separate snapshot benefit from renderer contention. |
+| `baselayer-firecracker-full-chromium`                | firecracker | Full Chromium guest via `artifacts/firecracker/rootfs-chromium.ext4`.                                |
 | `BaseLayer-Beedrill-full-chromium-512`          | firecracker | Full Chromium guest at `512 MB`; compatibility under tighter memory.                                 |
 | `BaseLayer-Pidgey-network-validate`             | firecracker | Enable network-slot validation on claim; measure safety overhead.                                    |
-| `BaseLayer-Pidgeotto-fluid-hybrid`              | firecracker | Dynamic CPU policy in `hybrid` mode.                                                                 |
-| `BaseLayer-Pidgeot-fluid-always`                | firecracker | Dynamic CPU policy in `always` mode.                                                                 |
-| `BaseLayer-Rattata-fast-slot-reuse`             | firecracker | Skip helper cleanup grace on clean slots to isolate create-path slot reuse overhead.                 |
-| `BaseLayer-Raticate-density-512-1vcpu`          | firecracker | Combine 512MB guests, 1 vCPU, and fast slot reuse for density.                                       |
-| `BaseLayer-Spearow-fluid-density`               | firecracker | Combine 512MB/1vCPU, fast slot reuse, and hybrid fluid CPU policy.                                   |
+| `baselayer-firecracker-fluid-hybrid`              | firecracker | Dynamic CPU policy in `hybrid` mode.                                                                 |
+| `baselayer-firecracker-fluid-always`                | firecracker | Dynamic CPU policy in `always` mode.                                                                 |
+| `baselayer-firecracker-headless-shell-fast-slot-reuse`             | firecracker | Skip helper cleanup grace on clean slots to isolate create-path slot reuse overhead.                 |
+| `baselayer-firecracker-headless-shell-density-512mb-1vcpu`          | firecracker | Combine 512MB guests, 1 vCPU, and fast slot reuse for density.                                       |
+| `baselayer-firecracker-fluid-density`               | firecracker | Combine 512MB/1vCPU, fast slot reuse, and hybrid fluid CPU policy.                                   |
 | `BaseLayer-Oddish-kernel-goto`                  | firecracker | Kernel-inspired guest Chromium/headless-shell launch preset baked into a dedicated rootfs.           |
 | `BaseLayer-Gloom-kernel-goto-lite`              | firecracker | Narrower Kernel-inspired guest launch subset intended to keep the BU gain with fewer extras.         |
 | `BaseLayer-Vileplume-kernel-feature-prune`      | firecracker | Kernel-derived disable-features bundle only, without the broader startup bundle.                     |
-| `BaseLayer-Gengar-kernel-startup-prune`         | firecracker | Kernel-style startup/service pruning while keeping feature flags close to baseline.                  |
+| `baselayer-firecracker-headless-shell-startup-prune`         | firecracker | Kernel-style startup/service pruning while keeping feature flags close to baseline.                  |
 | `BaseLayer-Paras-kernel-goto-ipv6off`           | firecracker | Same as Oddish, but disables IPv6 inside the guest image.                                            |
-| `BaseLayer-Dragonite-kernel-balanced`           | firecracker | Balanced combined bundle: startup pruning plus curated Kernel-derived feature pruning.               |
+| `baselayer-firecracker-headless-shell-kernel-balanced`           | firecracker | Balanced combined bundle: startup pruning plus curated Kernel-derived feature pruning.               |
 | `BaseLayer-Parasect-kernel-goto-cdp-warm`       | firecracker | Kernel-inspired guest launch preset stacked with the CDP-only warm snapshot.                         |
 | `BaseLayer-Krabby-kernel-startup-prune-lite`    | firecracker | Tighter follow-up to Gengar with only the lowest-risk startup/service pruning.                       |
 | `BaseLayer-Kingler-kernel-balanced-lite`        | firecracker | Tighter follow-up to Dragonite with a reduced feature-prune set.                                     |
@@ -68,9 +68,9 @@ Each new Firecracker variant uses its own snapshot name and `data/firecracker/*-
 | `BaseLayer-Poliwhirl-async-manual-dragonite`    | firecracker | Manual async-parity integration using a dedicated Dragonite-style rootfs instead of a stacked merge. |
 | `BaseLayer-Staryu-custom-shell-startup-network` | firecracker | Custom-built `chrome-headless-shell` baseline lane for build-level startup/network experiments.      |
 | `BaseLayer-Starmie-async-custom-shell-merge`    | firecracker | Manual async-parity custom-shell lane using the main Mew runtime semantics.                          |
-| `BaseLayer-Abra-custom-shell-baseline`          | firecracker | Direct custom-shell baseline A/B lane.                                                               |
-| `BaseLayer-Kadabra-custom-shell-startup-prune`  | firecracker | Custom-shell startup-prune launch-profile lane.                                                      |
-| `BaseLayer-Alakazam-custom-shell-async-manual`  | firecracker | Custom-shell manual async-parity lane using a dedicated async-manual rootfs.                         |
+| `baselayer-firecracker-custom-shell`          | firecracker | Direct custom-shell baseline A/B lane.                                                               |
+| `baselayer-firecracker-custom-shell-startup-prune`  | firecracker | Custom-shell startup-prune launch-profile lane.                                                      |
+| `baselayer-firecracker-custom-shell-async`  | firecracker | Custom-shell manual async-parity lane using a dedicated async-manual rootfs.                         |
 | `BaseLayer-Ditto-custom-shell-kernel-balanced`  | firecracker | Combined lane: custom headless-shell binary + kernel-balanced guest (`rootfs-custom-shell-kernel-balanced.ext4`). |
 
 
@@ -103,7 +103,7 @@ Firecracker memory and vCPU:
 
 ```bash
 BENCH_ENABLE_FIRECRACKER=1 \
-BENCH_PROFILE_IDS="BaseLayer-Mew-firecracker-headless-shell,BaseLayer-Blastoise-firecracker-slim-512,BaseLayer-Caterpie-firecracker-slim-384,BaseLayer-Metapod-firecracker-one-vcpu" \
+BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell,baselayer-firecracker-headless-shell-512mb,baselayer-firecracker-headless-shell-384mb,baselayer-firecracker-headless-shell-1vcpu" \
 BENCH_FIRECRACKER_MAX_SESSIONS="32" \
 BENCH_FIRECRACKER_MAX_MICROVM_COUNT="32" \
 BENCH_CONCURRENCY_VALUES="8,16,24,32" \
@@ -114,7 +114,7 @@ Firecracker warm-level:
 
 ```bash
 BENCH_ENABLE_FIRECRACKER=1 \
-BENCH_PROFILE_IDS="BaseLayer-Mew-firecracker-headless-shell,BaseLayer-Butterfree-firecracker-cdp-warm,BaseLayer-Weedle-firecracker-context-warm,BaseLayer-Kakuna-firecracker-no-warm" \
+BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell,baselayer-firecracker-headless-shell-cdp-warm,baselayer-firecracker-headless-shell-context-warm,baselayer-firecracker-headless-shell-no-warm" \
 npm run bench:latency
 ```
 
@@ -123,7 +123,7 @@ Full Chromium compatibility:
 ```bash
 FIRECRACKER_BROWSER_PROFILE=chromium sudo bash ./scripts/firecracker/build-headless-shell-rootfs.sh
 BENCH_ENABLE_FIRECRACKER=1 \
-BENCH_PROFILE_IDS="BaseLayer-Mew-firecracker-headless-shell,BaseLayer-Mewtwo-full-chromium,BaseLayer-Beedrill-full-chromium-512" \
+BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell,baselayer-firecracker-full-chromium,BaseLayer-Beedrill-full-chromium-512" \
 BENCH_FIRECRACKER_MAX_SESSIONS="1" \
 BENCH_FIRECRACKER_MAX_MICROVM_COUNT="1" \
 npm run bench:latency
@@ -133,7 +133,7 @@ Fluid CPU retest:
 
 ```bash
 BENCH_ENABLE_FIRECRACKER=1 \
-BENCH_PROFILE_IDS="BaseLayer-Mew-firecracker-headless-shell,BaseLayer-Pidgeotto-fluid-hybrid,BaseLayer-Pidgeot-fluid-always" \
+BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell,baselayer-firecracker-fluid-hybrid,baselayer-firecracker-fluid-always" \
 BENCH_FIRECRACKER_MAX_SESSIONS="24" \
 BENCH_FIRECRACKER_MAX_MICROVM_COUNT="24" \
 BENCH_CONCURRENCY_VALUES="12,24" \
@@ -144,7 +144,7 @@ Create-path and density retest:
 
 ```bash
 BENCH_ENABLE_FIRECRACKER=1 \
-BENCH_PROFILE_IDS="BaseLayer-Mew-firecracker-headless-shell,BaseLayer-Rattata-fast-slot-reuse,BaseLayer-Raticate-density-512-1vcpu,BaseLayer-Spearow-fluid-density" \
+BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell,baselayer-firecracker-headless-shell-fast-slot-reuse,baselayer-firecracker-headless-shell-density-512mb-1vcpu,baselayer-firecracker-fluid-density" \
 BENCH_FIRECRACKER_MAX_SESSIONS="24" \
 BENCH_FIRECRACKER_MAX_MICROVM_COUNT="24" \
 BENCH_CONCURRENCY_VALUES="1,16,24" \
@@ -153,9 +153,9 @@ npm run bench:density
 
 Expected read:
 
-- `BaseLayer-Rattata-fast-slot-reuse` should mainly improve create/launch time. If it does not, the create bottleneck is not the fixed helper cleanup grace.
-- `BaseLayer-Raticate-density-512-1vcpu` should improve packing, but it may worsen navigation tails if the page workload is CPU-bound.
-- `BaseLayer-Spearow-fluid-density` is only worth keeping if it beats `BaseLayer-Raticate` on navigation tail without materially worsening create.
+- `baselayer-firecracker-headless-shell-fast-slot-reuse` should mainly improve create/launch time. If it does not, the create bottleneck is not the fixed helper cleanup grace.
+- `baselayer-firecracker-headless-shell-density-512mb-1vcpu` should improve packing, but it may worsen navigation tails if the page workload is CPU-bound.
+- `baselayer-firecracker-fluid-density` is only worth keeping if it beats `baselayer-firecracker-headless-shell-density-512mb-1vcpu` on navigation tail without materially worsening create.
 
 Bursty agent-session retest:
 
@@ -166,7 +166,7 @@ BENCH_BURST_COUNT="4" \
 BENCH_BURST_ROUNDS="2" \
 BENCH_BURST_IDLE_MS="5000" \
 BENCH_BURST_STAGGER_MS="250" \
-BENCH_PROFILE_IDS="BaseLayer-Raticate-density-512-1vcpu,BaseLayer-Spearow-fluid-density" \
+BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell-density-512mb-1vcpu,baselayer-firecracker-fluid-density" \
 BENCH_FIRECRACKER_MAX_SESSIONS="48" \
 BENCH_FIRECRACKER_MAX_MICROVM_COUNT="48" \
 BENCH_CONCURRENCY_VALUES="16,24,32,48" \
@@ -177,7 +177,7 @@ Manual async and custom-shell screening:
 
 ```bash
 BENCH_ENABLE_FIRECRACKER=1 \
-BENCH_PROFILE_IDS="BaseLayer-Mew-firecracker-headless-shell,BaseLayer-Poliwag-async-manual-gengar,BaseLayer-Poliwhirl-async-manual-dragonite,BaseLayer-Abra-custom-shell-baseline,BaseLayer-Kadabra-custom-shell-startup-prune,BaseLayer-Alakazam-custom-shell-async-manual" \
+BENCH_PROFILE_IDS="baselayer-firecracker-headless-shell,BaseLayer-Poliwag-async-manual-gengar,BaseLayer-Poliwhirl-async-manual-dragonite,baselayer-firecracker-custom-shell,baselayer-firecracker-custom-shell-startup-prune,baselayer-firecracker-custom-shell-async" \
 BENCH_CONCURRENCY_VALUES="1,16,24" \
 npm run bench:density
 ```

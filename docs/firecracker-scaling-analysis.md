@@ -295,14 +295,14 @@ That is a good outcome for the thesis:
 A later `fluid5` comparison was run as a separate experiment against the same Firecracker baseline.
 
 Valid artifacts:
-- [`fluid5-c24-baseline.json`](../data/benchmarks/baselayer-firecracker-fluid5/fluid5-c24-baseline.json)
-- [`fluid5-c12-always.json`](../data/benchmarks/baselayer-firecracker-fluid5/fluid5-c12-always.json)
-- [`fluid5-c24-always.json`](../data/benchmarks/baselayer-firecracker-fluid5/fluid5-c24-always.json)
-- [`fluid5-c12-hybrid.json`](../data/benchmarks/baselayer-firecracker-fluid5/fluid5-c12-hybrid.json)
-- [`fluid5-c24-hybrid.json`](../data/benchmarks/baselayer-firecracker-fluid5/fluid5-c24-hybrid.json)
+- `fluid5-c24-baseline.json`
+- `fluid5-c12-always.json`
+- `fluid5-c24-always.json`
+- `fluid5-c12-hybrid.json`
+- `fluid5-c24-hybrid.json`
 
 One earlier artifact should not be used for comparison:
-- [`fluid5-c12-baseline.json`](../data/benchmarks/baselayer-firecracker-fluid4/benchmarks/fluid5-c12-baseline.json)
+- `fluid5-c12-baseline.json`
   - this was produced before the 5-minute benchmark timeout bug was fixed
   - it has `12/12` creates but `0/12` navigations due to the old timeout condition
 

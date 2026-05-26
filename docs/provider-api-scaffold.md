@@ -231,9 +231,8 @@ The scaffold is now validated on both:
 - a generic managed-host proof (`t3.large`, cold container path), and
 - the optimized Firecracker path on AWS `m5zn.metal`.
 
-The latest cloud hardening pass is documented in [provider-api-cloud-validation-2026-04-21.md](./provider-api-cloud-validation-2026-04-21.md).
-
-That run confirmed all of the new partner-surface behaviors on a real AWS VM:
+The latest cloud hardening pass confirmed the new partner-surface behaviors on
+a real AWS VM:
 
 - partner auth
 - `/v1`-only public listener behavior
@@ -251,9 +250,8 @@ That follow-up is now implemented locally in `ControlPlaneStore`:
 
 That is enough for the current small control-plane design. It is not a database replacement, but it removes the specific stale-read bug found during the cloud validation.
 
-The next paid cloud rerun is now also complete: [provider-api-firecracker-warm-validation-2026-04-22.md](./provider-api-firecracker-warm-validation-2026-04-22.md).
-
-That run validated the new warm-pool lane on a real Firecracker host with split public/internal listeners:
+A later paid cloud rerun validated the new warm-pool lane on a real Firecracker
+host with split public/internal listeners:
 
 - the public `/v1` listener saw host registration written by the internal listener without a restart
 - the host allowlist was enforced with a real host-specific entry
@@ -279,8 +277,7 @@ One final local follow-up landed after that rerun:
 - node-agent now sends an immediate heartbeat after termination
 - node-agent now sends an immediate heartbeat after warm-pool maintenance
 
-That follow-up is now revalidated on a paid cloud host in
-[provider-api-firecracker-heartbeat-validation-2026-04-22.md](./provider-api-firecracker-heartbeat-validation-2026-04-22.md):
+That follow-up was revalidated on a paid cloud host:
 
 - `/v1/hosts` reflected the warm borrow within `255 ms`
 - `/v1/hosts` reflected the host back at `warmReadyCount = 1` within `758 ms`
@@ -292,8 +289,6 @@ Latest optimized provider/API result:
 - `domcontentloaded`
 - direct same-region provider path p50 about `850 ms`
 - same-runner BrowserArena sequential p50 about `725 ms`
-
-The detailed write-up and artifacts are in [provider-api-firecracker-validation-2026-04-21.md](./provider-api-firecracker-validation-2026-04-21.md).
 
 The provider create path also now records warm-path expectation vs. outcome in `controlPlaneTimings.create`:
 

@@ -128,6 +128,7 @@ export const launchTimingSchema = z.object({
   cdpSocketReadyMs: z.number().nonnegative().optional(),
   cdpVersionReadyMs: z.number().nonnegative().optional(),
   cdpTargetListReadyMs: z.number().nonnegative().optional(),
+  cdpStableReadyMs: z.number().nonnegative().optional(),
 });
 export type LaunchTiming = z.infer<typeof launchTimingSchema>;
 

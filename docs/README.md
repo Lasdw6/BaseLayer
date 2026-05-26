@@ -17,7 +17,6 @@ Recommended reading order:
 | Provider observability contract | [provider-observability-contract.md](./provider-observability-contract.md) |
 | Provider scorecard metrics | [provider-scorecard-metrics.md](./provider-scorecard-metrics.md) |
 | BrowserArena result notes | [browserarena-results.md](./browserarena-results.md) |
-| Experiment ledger | [optimization-experiments-log.md](./optimization-experiments-log.md) |
 
 Benchmark notes are research artifacts. Check each document's topology and
 caveats before comparing numbers across runs.

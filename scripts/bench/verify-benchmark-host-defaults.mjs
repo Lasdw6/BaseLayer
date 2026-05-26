@@ -51,6 +51,12 @@ if (!providerApi.includes("phaseSummaryP50")) {
 if (!providerApi.includes("navigationBreakdownP50")) {
   failures.push("src/bench/provider-api.ts: missing navigationBreakdownP50");
 }
+if (!providerApi.includes('BENCH_CREATE_TIMEOUT_MS"] ?? "120000"')) {
+  failures.push("src/bench/provider-api.ts: provider create timeout must default to at least 120000 ms");
+}
+if (/AbortSignal\.timeout\(60_000\)/.test(providerApi)) {
+  failures.push("src/bench/provider-api.ts: provider create must not use hardcoded 60000 ms timeout");
+}
 
 if (failures.length > 0) {
   for (const f of failures) {

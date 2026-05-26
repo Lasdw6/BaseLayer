@@ -358,7 +358,7 @@ export function runControlPlaneStoreContractSuite(
       );
     });
 
-    it("applies async-delete release pressure until reservation expiry even across later heartbeats", () => {
+    it("does not free async-delete capacity until the host heartbeat reports teardown", () => {
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), "baselayer-store-"));
       tempDirs.push(dir);
       const statePath = path.join(dir, "state.json");
@@ -399,9 +399,9 @@ export function runControlPlaneStoreContractSuite(
       });
 
       const effectiveBeforeHeartbeat = store.getHost("host-1");
-      expect(effectiveBeforeHeartbeat?.metrics.activeSessions).toBe(15);
-      expect(effectiveBeforeHeartbeat?.metrics.activeMicrovmCount).toBe(15);
-      expect(effectiveBeforeHeartbeat?.metrics.coldAdmitRemaining).toBe(1);
+      expect(effectiveBeforeHeartbeat?.metrics.activeSessions).toBe(16);
+      expect(effectiveBeforeHeartbeat?.metrics.activeMicrovmCount).toBe(16);
+      expect(effectiveBeforeHeartbeat?.metrics.coldAdmitRemaining).toBe(0);
 
       store.upsertHost({
         ...(effectiveBeforeHeartbeat ?? host()),
@@ -417,9 +417,9 @@ export function runControlPlaneStoreContractSuite(
       });
 
       const effectiveAfterHeartbeat = store.getHost("host-1");
-      expect(effectiveAfterHeartbeat?.metrics.activeSessions).toBe(14);
-      expect(effectiveAfterHeartbeat?.metrics.activeMicrovmCount).toBe(14);
-      expect(effectiveAfterHeartbeat?.metrics.coldAdmitRemaining).toBe(2);
+      expect(effectiveAfterHeartbeat?.metrics.activeSessions).toBe(15);
+      expect(effectiveAfterHeartbeat?.metrics.activeMicrovmCount).toBe(15);
+      expect(effectiveAfterHeartbeat?.metrics.coldAdmitRemaining).toBe(1);
     });
   });
 }

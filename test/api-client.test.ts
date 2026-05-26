@@ -136,7 +136,7 @@ describe("createRemoteSession", () => {
         },
         { timeoutMs: 5, retries: 0 },
       ),
-    ).rejects.toMatchObject<Partial<RemoteSessionCreateError>>({
+    ).rejects.toMatchObject({
       name: "RemoteSessionCreateError",
       kind: "timeout",
       hostId: "host-1",
@@ -162,7 +162,7 @@ describe("createRemoteSession", () => {
         },
         { retries: 0 },
       ),
-    ).rejects.toMatchObject<Partial<RemoteSessionCreateError>>({
+    ).rejects.toMatchObject({
       name: "RemoteSessionCreateError",
       kind: "response",
       hostId: "host-1",

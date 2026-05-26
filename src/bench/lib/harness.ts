@@ -506,6 +506,8 @@ export async function measureBrowserArenaStages(
     await page.title().catch(() => undefined);
     const navigationMetrics = await collectNavigationMetricsFromPage(page);
 
+    await browser.close();
+
     const releaseStart = performance.now();
     await deleteSession(controlPlaneUrl, session.sessionId);
     const session_release_ms = performance.now() - releaseStart;

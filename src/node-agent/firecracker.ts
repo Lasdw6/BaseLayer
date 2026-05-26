@@ -958,7 +958,30 @@ async function maybePrecreateTarget(debugHttpUrl: string): Promise<void> {
 
 async function waitForDevtoolsTargetList(debugHttpUrl: string, timeoutMs: number): Promise<void> {
   const listUrl = debugHttpUrl.replace(/\/json\/version$/, "/json/list");
-  await waitForJson<Array<{ id?: string; type?: string }>>(listUrl, timeoutMs);
+  const deadline = Date.now() + timeoutMs;
+  let lastError: unknown;
+  let delay = 10;
+
+  while (Date.now() < deadline) {
+    try {
+      const targets = await waitForJson<Array<{ id?: string; type?: string }>>(
+        listUrl,
+        remainingDeadlineTimeoutMs(deadline),
+      );
+      if (targets.some((target) => target.type === "page" && target.id)) {
+        return;
+      }
+      throw new Error("DevTools target list has no page target yet.");
+    } catch (error) {
+      lastError = error;
+      await sleep(delay);
+      delay = Math.min(delay * 1.5, 100);
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`Timed out waiting for DevTools target list at ${listUrl}`);
 }
 
 function tailFile(filePath: string, maxLines = 80): string {
@@ -1319,6 +1342,28 @@ async function waitForWebSocketUpgrade(
   }
 
   throw new Error(`Timed out waiting for WebSocket endpoint ws://${host}:${port}${requestPath}`);
+}
+
+async function waitForStableDevtoolsReady(
+  machine: FirecrackerMachineHandle,
+  browserWsPath: string,
+  timeoutMs: number,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  await waitForJson<{ webSocketDebuggerUrl: string }>(
+    machine.localDebugHttpUrl(),
+    remainingDeadlineTimeoutMs(deadline),
+  );
+  await waitForDevtoolsTargetList(
+    machine.localDebugHttpUrl(),
+    remainingDeadlineTimeoutMs(deadline),
+  );
+  await waitForWebSocketUpgrade(
+    agentConfig.relayProbeHost,
+    machine.relay.port,
+    browserWsPath,
+    remainingDeadlineTimeoutMs(deadline),
+  );
 }
 
 async function warmSnapshotMachine(machine: FirecrackerMachineHandle): Promise<string> {
@@ -2557,6 +2602,7 @@ export class FirecrackerOrchestrator {
         const cdpSocketReadyStarted = performance.now();
         let cdpVersionReadyMs = 0;
         let cdpTargetListReadyMs = 0;
+        let cdpStableReadyMs = 0;
         let browserWsPath = snapshotMetadata?.browserWsPath;
 
         if (browserWsPath) {
@@ -2596,6 +2642,14 @@ export class FirecrackerOrchestrator {
         );
         cdpTargetListReadyMs = performance.now() - cdpTargetListReadyStarted;
 
+        const cdpStableReadyStarted = performance.now();
+        await waitForStableDevtoolsReady(
+          machine,
+          browserWsPath,
+          cdpPhaseTimeoutMs(),
+        );
+        cdpStableReadyMs = performance.now() - cdpStableReadyStarted;
+
         maybePrecreateTarget(machine.localDebugHttpUrl()).catch(() => undefined);
 
         if (agentConfig.firecrackerReadySettleMs > 0) {
@@ -2609,6 +2663,7 @@ export class FirecrackerOrchestrator {
           cdpSocketReadyMs: performance.now() - cdpSocketReadyStarted,
           cdpVersionReadyMs,
           cdpTargetListReadyMs,
+          cdpStableReadyMs,
         };
         this.#restoreTimes.push(restoreMs);
         if (this.#restoreTimes.length > 100) {

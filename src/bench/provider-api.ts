@@ -101,6 +101,7 @@ const matrixSingleRuns = Number.parseInt(
 );
 const timeoutSec = Number.parseInt(process.env["BENCH_SESSION_TIMEOUT_SEC"] ?? "300", 10);
 const idleTimeoutSec = Number.parseInt(process.env["BENCH_SESSION_IDLE_TIMEOUT_SEC"] ?? "60", 10);
+const createTimeoutMs = Number.parseInt(process.env["BENCH_CREATE_TIMEOUT_MS"] ?? "120000", 10);
 const browser = process.env["BASELAYER_BROWSER"] ?? "chromium";
 const runtimeProfile = process.env["BASELAYER_RUNTIME_PROFILE"];
 const region = process.env["BASELAYER_REGION"];
@@ -119,6 +120,13 @@ const benchmarkName =
   requestedConcurrencyValues.length > 0 ? "provider-api-matrix" : "provider-api";
 
 const PROVIDER_BENCH_SCHEMA = "browserarena-stages-v2";
+
+function createTimeoutSignal(): AbortSignal | undefined {
+  if (!Number.isFinite(createTimeoutMs) || createTimeoutMs <= 0) {
+    return undefined;
+  }
+  return AbortSignal.timeout(createTimeoutMs);
+}
 
 interface BenchmarkSummary {
   benchmark: string;
@@ -196,7 +204,7 @@ async function createSession(wave: number, slot: number): Promise<{
   const response = await fetch(`${apiUrl}/v1/sessions`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    signal: AbortSignal.timeout(60_000),
+    signal: createTimeoutSignal(),
     body: JSON.stringify({
       browser,
       keepAlive: false,
@@ -309,6 +317,9 @@ async function runIteration(wave: number, slot: number): Promise<IterationResult
     await page.title().catch(() => undefined);
     page_goto_ms = performance.now() - gotoStarted;
     const navigationMetrics = await collectNavigationMetricsFromPage(page);
+
+    await browserConnection.close();
+    browserConnection = undefined;
 
     const deleted = await deleteSession(session.sessionId);
     session_release_ms = deleted.releaseMs;

@@ -146,32 +146,10 @@ export class ControlPlaneStore implements ControlPlaneStoreBackend {
       host.metrics.reservedMicrovmMemoryMb += host.capacity.microvmMemoryMb;
     }
 
-    for (const reservation of deleteReservations) {
-      const host = hosts.find((entry) => entry.hostId === reservation.hostId);
-      if (!host) {
-        continue;
-      }
-
-      host.metrics.activeSessions = Math.max(0, host.metrics.activeSessions - 1);
-      host.metrics.activeRendererCount = Math.max(
-        0,
-        host.metrics.activeRendererCount - Math.max(1, reservation.rendererCount),
-      );
-      host.metrics.coldAdmitRemaining = Math.min(
-        host.capacity.maxSessions,
-        (host.metrics.coldAdmitRemaining ?? 0) + 1,
-      );
-
-      if (host.mode !== "firecracker" || reservation.runtimeKind !== "microvm") {
-        continue;
-      }
-
-      host.metrics.activeMicrovmCount = Math.max(0, host.metrics.activeMicrovmCount - 1);
-      host.metrics.reservedMicrovmMemoryMb = Math.max(
-        0,
-        host.metrics.reservedMicrovmMemoryMb - host.capacity.microvmMemoryMb,
-      );
-    }
+    // Async delete returns before node-agent teardown completes. Do not optimistically
+    // free capacity here; the next host heartbeat is the source of truth for when
+    // Firecracker slots and microVM capacity are actually reusable.
+    void deleteReservations;
 
     return hosts;
   }

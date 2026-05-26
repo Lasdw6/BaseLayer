@@ -2,7 +2,7 @@
   "name": "baselayer",
   "version": "0.1.0",
   "type": "module",
-  "description": "BaseLayer — control plane and host runtime for headless browser hosting.",
+  "description": "BaseLayer - control plane and host runtime for headless browser hosting.",
   "license": "MIT",
   "repository": {
     "type": "git",

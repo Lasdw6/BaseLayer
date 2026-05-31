@@ -10,11 +10,12 @@ session create + CDP connect + page.goto + session release
 
 Run shape:
 
-- run date: 2026-05-23
-- provider/API and benchmark runner: same AWS `m5zn.metal` host
-- target: `https://example.com/`
+- run date: 2026-05-31
+- benchmark runner: AWS `t3.micro`, `us-east-2`
+- provider host: AWS `m5zn.metal`, `us-east-2`
+- target: `http://example.com/`
 - wait condition: `domcontentloaded`
-- runs: `100`
+- runs: `100`, repeated five times
 - concurrency: `1`
 - runtime: Firecracker + `chromium-headless-shell`
 - delete path: async API release with delayed node-agent teardown
@@ -22,33 +23,42 @@ Run shape:
 
 | Run | Run date | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `wsprobe-c1x100` | 2026-05-23 | `99/100` | `167.7 ms` | `15.1 ms` | `103.4 ms` | `26.6 ms` | `332.2 ms` |
-| `repl332-c1x100` | 2026-05-23 | `99/100` | `158.6 ms` | `22.6 ms` | `103.2 ms` | `24.9 ms` | `331.1 ms` |
-| `repl332b-c1x100` | 2026-05-23 | `98/100` | `167.7 ms` | `14.8 ms` | `100.9 ms` | `26.5 ms` | `331.5 ms` |
+| `baselayer-browserarena-live-1780266872992` | 2026-05-31 | `100/100` | `90.5 ms` | `19.4 ms` | `83.1 ms` | `11.7 ms` | `209.0 ms` |
+| `baselayer-browserarena-live-1780266925633` | 2026-05-31 | `99/100` | `90.4 ms` | `54.5 ms` | `82.8 ms` | `11.6 ms` | `213.6 ms` |
+| `baselayer-browserarena-live-1780266989299` | 2026-05-31 | `99/100` | `90.3 ms` | `54.4 ms` | `82.6 ms` | `11.3 ms` | `213.2 ms` |
+| `baselayer-browserarena-live-1780267052917` | 2026-05-31 | `100/100` | `90.3 ms` | `18.9 ms` | `83.7 ms` | `11.6 ms` | `209.5 ms` |
+| `baselayer-browserarena-live-1780267105128` | 2026-05-31 | `100/100` | `90.0 ms` | `50.5 ms` | `82.7 ms` | `11.2 ms` | `211.8 ms` |
+| **Five-run average** | 2026-05-31 | **`498/500`** | **`90.3 ms`** | **`39.5 ms`** | **`83.0 ms`** | **`11.5 ms`** | **`211.4 ms`** |
 
-The latency replicated tightly at roughly `331-332 ms` p50 lifecycle.
+The five-run average is `211.4 ms` p50 lifecycle across `498/500` successful
+sessions. Raw artifacts and the summary are in
+[`docs/benchmarks/browserarena-c1-final-2026-05-31/`](./benchmarks/browserarena-c1-final-2026-05-31/).
 
-Against the BrowserArena `2026-05-22` c1 leaderboard snapshot, this positions
-BaseLayer ahead of the top listed provider by p50 lifecycle latency:
+Against the BrowserArena c1 leaderboard snapshot checked on 2026-05-31, this
+positions BaseLayer above the top listed provider by p50 lifecycle latency:
 
 | Rank | Provider / variant | Lifecycle | Create | Connect | Goto | Release | Success |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | BaseLayer | `331 ms` | `159 ms` | `23 ms` | `103 ms` | `25 ms` | `99/100` |
-| 2 | Kernel | `341 ms` | `34 ms` | `84 ms` | `185 ms` | `39 ms` | `100/100` |
-| 3 | Notte | `394 ms` | `157 ms` | `112 ms` | `101 ms` | `24 ms` | `100/100` |
-| 4 | Browserbase | `557 ms` | `110 ms` | `241 ms` | `126 ms` | `81 ms` | `100/100` |
-| 5 | Steel | `1190 ms` | `346 ms` | `629 ms` | `100 ms` | `116 ms` | `100/100` |
-| 6 | Hyperbrowser | `1761 ms` | `1048 ms` | `218 ms` | `134 ms` | `361 ms` | `99/100` |
-| 7 | Anchor Browser | `3664 ms` | `1440 ms` | `155 ms` | `1257 ms` | `812 ms` | `99/100` |
-| 8 | Browser Use | `4538 ms` | `1489 ms` | `114 ms` | `782 ms` | `2154 ms` | `100/100` |
+| 1 | BaseLayer | `211 ms` | `90 ms` | `40 ms` | `83 ms` | `12 ms` | `498/500` |
+| 2 | Notte | `401 ms` | `167 ms` | `110 ms` | `100 ms` | `24 ms` | `100/100` |
+| 3 | Kernel | `479 ms` | `39 ms` | `70 ms` | `169 ms` | `201 ms` | `100/100` |
+| 4 | Browserbase | `562 ms` | `110 ms` | `248 ms` | `122 ms` | `82 ms` | `100/100` |
+| 5 | Browser Use | `1016 ms` | `764 ms` | `147 ms` | `58 ms` | `48 ms` | `100/100` |
+| 6 | Steel | `1068 ms` | `179 ms` | `670 ms` | `101 ms` | `119 ms` | `100/100` |
+| 7 | Hyperbrowser | `1749 ms` | `1010 ms` | `212 ms` | `164 ms` | `364 ms` | `100/100` |
+| 8 | Anchor Browser | `5003 ms` | `2139 ms` | `218 ms` | `1482 ms` | `1164 ms` | `99/100` |
 
 This is a latency-positioning comparison, not an official leaderboard claim.
 
 ## Latest Concurrent Validation
 
-The concurrent validation was run on 2026-05-23. It used `BENCH_RUNS=10` and
-`BENCH_CONCURRENCY=10`, which produces 10 waves of 10 sessions, or 100 measured
-sessions total.
+The current public headline is the sequential five-run average above. The
+concurrent `c10 x10` path remains under review while the scheduler and live-demo
+harness are being hardened.
+
+The most recent published concurrent validation was run on 2026-05-23. It used
+`BENCH_RUNS=10` and `BENCH_CONCURRENCY=10`, which produces 10 waves of 10
+sessions, or 100 measured sessions total.
 
 | Run | Run date | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -92,7 +102,7 @@ export CONTROL_PLANE_ASYNC_SESSION_DELETE=1
 export CONTROL_PLANE_ASYNC_SESSION_DELETE_DELAY_MS=120000
 export BENCH_RUNS=100
 export BENCH_CONCURRENCY=1
-export BENCH_BROWSERARENA_PAGE_URL="https://example.com/"
+export BENCH_BROWSERARENA_PAGE_URL="http://example.com/"
 export BENCH_PAGE_GOTO_WAIT_UNTIL="domcontentloaded"
 export BENCH_CONNECT_RETRY_BUDGET_MS=15000
 export BENCH_OUT="$PWD/data/benchmarks/provider-api-example-c1x100.json"

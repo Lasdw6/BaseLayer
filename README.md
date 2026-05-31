@@ -17,30 +17,26 @@ These are **self-hosted** BrowserArena-methodology runs.
 ### Latest Methodology Snapshot
 
 BrowserArena changed its default fairness URL to `example.com` on 2026-05-05.
-Using that current target, BaseLayer's fastest replicated sequential self-hosted
-run was measured on 2026-05-23. The competitor positioning referenced in
+Using that current target, BaseLayer's latest five-run sequential self-hosted
+average was measured on 2026-05-31. The competitor positioning referenced in
 [`docs/browserarena-results.md`](./docs/browserarena-results.md) uses
-BrowserArena c1 artifacts from 2026-05-22.
+BrowserArena c1 leaderboard numbers checked on 2026-05-31.
 
-In the BrowserArena 2026-05-22 c1 leaderboard snapshot, this would place
-BaseLayer ahead of the top listed provider by sequential p50 lifecycle latency
-
-| Runtime / profile | Run date | Topology | Runs | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
-| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `baselayer-firecracker-headless-shell` | 2026-05-23 | AWS `m5zn.metal`, same-host provider/API, BrowserArena stages, `example.com`, `c1` | 100 | `99/100` | `158.6 ms` | `22.6 ms` | `103.2 ms` | `24.9 ms` | `331.1 ms` |
-| `baselayer-firecracker-headless-shell` | 2026-05-23 | AWS `m5zn.metal`, same-host provider/API, BrowserArena stages, `example.com`, `c1` | 100 | `99/100` | `167.7 ms` | `15.1 ms` | `103.4 ms` | `26.6 ms` | `332.2 ms` |
-| `baselayer-firecracker-headless-shell` | 2026-05-23 | AWS `m5zn.metal`, same-host provider/API, BrowserArena stages, `example.com`, `c1` | 100 | `98/100` | `167.7 ms` | `14.8 ms` | `100.9 ms` | `26.5 ms` | `331.5 ms` |
-
-The replicated median is roughly **331-332 ms p50 lifecycle**. These runs would
-be competitive with the fastest current sequential BrowserArena numbers, but
-they are self-hosted provider/API runs, not official leaderboard submissions.
-
-
-The best current concurrent validation run:
+In the BrowserArena c1 leaderboard snapshot checked on 2026-05-31, this places
+BaseLayer above the top listed provider by sequential p50 lifecycle latency.
 
 | Runtime / profile | Run date | Topology | Runs | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `baselayer-firecracker-headless-shell` | 2026-05-23 | AWS `m5zn.metal`, same-host provider/API, BrowserArena stages, `example.com`, `c10 x10` | 100 | `100/100` | `396.1 ms` | `39.6 ms` | `144.8 ms` | `50.0 ms` | `651.7 ms` |
+| `baselayer-firecracker-headless-shell` | 2026-05-31 | AWS `t3.micro` runner -> AWS `m5zn.metal` host, `us-east-2`, BrowserArena stages, `http://example.com`, `c1 x100`, 5 repeats | 500 | `498/500` | `90.3 ms` | `39.5 ms` | `83.0 ms` | `11.5 ms` | `211.4 ms` |
+
+These are **self-hosted, sequential** benchmark results, averaged across five
+`c1 x100` runs on 2026-05-31. They are not official BrowserArena leaderboard
+submissions. The runs are reproducible, and this repo includes the
+[benchmark harness used, run artifacts, and replication notes](./docs/benchmarks/browserarena-c1-final-2026-05-31/).
+
+The latest concurrent `c10 x10` run remains under review while the scheduler and
+demo harness are being hardened. The current public headline is the sequential
+five-run average above.
 
 See [`docs/browserarena-results.md`](./docs/browserarena-results.md) for the
 replication notes and caveats.
@@ -65,7 +61,7 @@ directly comparable with these Google-target rows.
 See
 [`docs/browserarena-results.md`](./docs/browserarena-results.md) and
 [`docs/current-best-profiles.md`](./docs/current-best-profiles.md) for
-and historical context.
+replication notes and historical context.
 
 ## What This Repo Contains
 
@@ -145,7 +141,7 @@ export BASELAYER_API_URL="http://<provider-host>:3000/v1"
 export BASELAYER_RUNTIME_PROFILE="baselayer-firecracker-headless-shell"
 export BENCH_RUNS=100
 export BENCH_CONCURRENCY=1
-export BENCH_BROWSERARENA_PAGE_URL="https://example.com/"
+export BENCH_BROWSERARENA_PAGE_URL="http://example.com/"
 export BENCH_PAGE_GOTO_WAIT_UNTIL="domcontentloaded"
 export BENCH_CONNECT_RETRY_BUDGET_MS=15000
 export BENCH_OUT="$PWD/data/benchmarks/provider-api-100.json"
@@ -157,7 +153,7 @@ The output JSON includes p50/p95/p99 for each BrowserArena-style stage plus the
 raw per-iteration rows.
 
 The current c1 replication rows used that shape with `BENCH_RUNS=100` and
-`BENCH_CONCURRENCY=1`. The current c10 validation row used:
+`BENCH_CONCURRENCY=1`, repeated five times.
 
 ```bash
 export BENCH_RUNS=10

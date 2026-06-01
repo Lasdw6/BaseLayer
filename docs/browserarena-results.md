@@ -43,19 +43,19 @@ successful iterations is `216.3 ms` across `498/500` successes. Raw artifacts
 and the summary are in
 [`docs/benchmarks/browserarena-c1-final-2026-06-01/`](./benchmarks/browserarena-c1-final-2026-06-01/).
 
-Against the BrowserArena c1 leaderboard snapshot checked on 2026-05-31, this
+Against the BrowserArena c1 leaderboard snapshot checked on 2026-06-01, this
 positions BaseLayer above the top listed provider by p50 lifecycle latency:
 
 | Rank | Provider / variant | Lifecycle | Create | Connect | Goto | Release | Success |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | BaseLayer | `224 ms` | `75 ms` | `54 ms` | `83 ms` | `12 ms` | `100/100` |
-| 2 | Notte | `401 ms` | `167 ms` | `110 ms` | `100 ms` | `24 ms` | `100/100` |
-| 3 | Kernel | `479 ms` | `39 ms` | `70 ms` | `169 ms` | `201 ms` | `100/100` |
-| 4 | Browserbase | `562 ms` | `110 ms` | `248 ms` | `122 ms` | `82 ms` | `100/100` |
-| 5 | Browser Use | `1016 ms` | `764 ms` | `147 ms` | `58 ms` | `48 ms` | `100/100` |
-| 6 | Steel | `1068 ms` | `179 ms` | `670 ms` | `101 ms` | `119 ms` | `100/100` |
-| 7 | Hyperbrowser | `1749 ms` | `1010 ms` | `212 ms` | `164 ms` | `364 ms` | `100/100` |
-| 8 | Anchor Browser | `5003 ms` | `2139 ms` | `218 ms` | `1482 ms` | `1164 ms` | `99/100` |
+| 2 | Notte | `358 ms` | `107 ms` | `117 ms` | `107 ms` | `27 ms` | `100/100` |
+| 3 | Kernel | `365 ms` | `42 ms` | `79 ms` | `176 ms` | `68 ms` | `100/100` |
+| 4 | Browserbase | `578 ms` | `112 ms` | `255 ms` | `127 ms` | `84 ms` | `100/100` |
+| 5 | Steel | `972 ms` | `170 ms` | `591 ms` | `97 ms` | `114 ms` | `100/100` |
+| 6 | Browser Use | `1206 ms` | `892 ms` | `152 ms` | `60 ms` | `104 ms` | `100/100` |
+| 7 | Hyperbrowser | `1745 ms` | `1028 ms` | `231 ms` | `121 ms` | `365 ms` | `100/100` |
+| 8 | Anchor Browser | `3791 ms` | `1467 ms` | `168 ms` | `1322 ms` | `835 ms` | `100/100` |
 
 This is a latency-positioning comparison, not an official leaderboard claim.
 

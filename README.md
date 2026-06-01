@@ -20,9 +20,9 @@ BrowserArena changed its default fairness URL to `example.com` on 2026-05-05.
 Using that current target, BaseLayer's latest conservative sequential
 self-hosted snapshot was measured on 2026-06-01. The competitor positioning referenced in
 [`docs/browserarena-results.md`](./docs/browserarena-results.md) uses
-BrowserArena c1 leaderboard numbers checked on 2026-05-31.
+BrowserArena c1 leaderboard numbers checked on 2026-06-01.
 
-In the BrowserArena c1 leaderboard snapshot checked on 2026-05-31, this places
+In the BrowserArena c1 leaderboard snapshot checked on 2026-06-01, this places
 BaseLayer above the top listed provider by sequential p50 lifecycle latency.
 For leaderboard-style comparisons, BaseLayer pools all successful iterations,
 computes the p50 of each lifecycle stage, then sums those stage p50s. The raw

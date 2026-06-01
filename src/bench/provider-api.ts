@@ -121,6 +121,20 @@ const benchmarkName =
 
 const PROVIDER_BENCH_SCHEMA = "browserarena-stages-v2";
 
+function median(values: number[]): number {
+  const sorted = values.filter(Number.isFinite).sort((left, right) => left - right);
+  if (sorted.length === 0) {
+    return 0;
+  }
+  const index = (sorted.length - 1) * 0.5;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) {
+    return sorted[lower] ?? 0;
+  }
+  return (sorted[lower] ?? 0) + ((sorted[upper] ?? 0) - (sorted[lower] ?? 0)) * (index - lower);
+}
+
 function createTimeoutSignal(): AbortSignal | undefined {
   if (!Number.isFinite(createTimeoutMs) || createTimeoutMs <= 0) {
     return undefined;
@@ -161,7 +175,12 @@ interface BenchmarkSummary {
   firstContentfulPaintMs?: LatencyMetricStats;
   runMetadata?: BenchmarkRunMetadata;
   iterations: IterationResult[];
-  /** Median of each lifecycle phase for quick A/B (e.g. custom shell vs Mew). */
+  /**
+   * Median of each lifecycle phase for quick A/B. `total_ms` is the sum of the
+   * phase p50 values, matching BrowserArena-style leaderboard breakdown math;
+   * the raw per-iteration total distribution remains in the top-level
+   * `total_ms` metric.
+   */
   phaseSummaryP50: {
     session_creation_ms: number;
     session_create_runtime_ms: number;
@@ -176,6 +195,7 @@ interface BenchmarkSummary {
     page_goto_ms: number;
     session_release_ms: number;
     total_ms: number;
+    total_iteration_ms?: number;
   };
   /** Full distribution for PerformanceNavigationTiming-derived segments (real URLs). */
   navigationBreakdown?: {
@@ -462,6 +482,10 @@ function summarizeIterations(
   const pageGoto = metricStatsFull(successful.map((item) => item.page_goto_ms));
   const sessionRelease = metricStatsFull(successful.map((item) => item.session_release_ms));
   const totalMs = metricStatsFull(successful.map((item) => item.total_ms));
+  const phaseSummarySessionCreation = median(successful.map((item) => item.session_creation_ms));
+  const phaseSummarySessionConnect = median(successful.map((item) => item.session_connect_ms));
+  const phaseSummaryPageGoto = median(successful.map((item) => item.page_goto_ms));
+  const phaseSummarySessionRelease = median(successful.map((item) => item.session_release_ms));
 
   const dnsLookup = metricStatsOptional(successful, (item) => item.navigationMetrics?.dnsLookupMs);
   const tcpConnect = metricStatsOptional(successful, (item) => item.navigationMetrics?.tcpConnectMs);
@@ -492,6 +516,11 @@ function summarizeIterations(
     navigationBreakdown.responseToDomContentLoadedMs = responseToDomContentLoaded;
   }
   const hasNavBreakdown = Object.keys(navigationBreakdown).length > 0;
+  const phaseSummaryTotalMs =
+    phaseSummarySessionCreation +
+    phaseSummarySessionConnect +
+    phaseSummaryPageGoto +
+    phaseSummarySessionRelease;
 
   return {
     benchmark: "provider-api",
@@ -526,7 +555,7 @@ function summarizeIterations(
     runMetadata,
     iterations,
     phaseSummaryP50: {
-      session_creation_ms: sessionCreation.p50,
+      session_creation_ms: phaseSummarySessionCreation,
       session_create_runtime_ms: sessionCreateRuntime.p50,
       session_create_transport_overhead_ms: sessionCreateTransport.p50,
       ...(controlPlaneCreate && { control_plane_create_ms: controlPlaneCreate.p50 }),
@@ -541,10 +570,11 @@ function summarizeIterations(
       ...(controlPlaneResponseBuild && {
         control_plane_response_build_ms: controlPlaneResponseBuild.p50,
       }),
-      session_connect_ms: sessionConnect.p50,
-      page_goto_ms: pageGoto.p50,
-      session_release_ms: sessionRelease.p50,
-      total_ms: totalMs.p50,
+      session_connect_ms: phaseSummarySessionConnect,
+      page_goto_ms: phaseSummaryPageGoto,
+      session_release_ms: phaseSummarySessionRelease,
+      total_ms: phaseSummaryTotalMs,
+      total_iteration_ms: totalMs.p50,
     },
     ...(hasNavBreakdown
       ? {

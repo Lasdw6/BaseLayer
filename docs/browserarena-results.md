@@ -10,7 +10,7 @@ session create + CDP connect + page.goto + session release
 
 Run shape:
 
-- run date: 2026-05-31
+- run date: 2026-06-01
 - benchmark runner: AWS `t3.micro`, `us-east-2`
 - provider host: AWS `m5zn.metal`, `us-east-2`
 - target: `http://example.com/`
@@ -23,23 +23,32 @@ Run shape:
 
 | Run | Run date | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `baselayer-browserarena-live-1780266872992` | 2026-05-31 | `100/100` | `90.5 ms` | `19.4 ms` | `83.1 ms` | `11.7 ms` | `209.0 ms` |
-| `baselayer-browserarena-live-1780266925633` | 2026-05-31 | `99/100` | `90.4 ms` | `54.5 ms` | `82.8 ms` | `11.6 ms` | `213.6 ms` |
-| `baselayer-browserarena-live-1780266989299` | 2026-05-31 | `99/100` | `90.3 ms` | `54.4 ms` | `82.6 ms` | `11.3 ms` | `213.2 ms` |
-| `baselayer-browserarena-live-1780267052917` | 2026-05-31 | `100/100` | `90.3 ms` | `18.9 ms` | `83.7 ms` | `11.6 ms` | `209.5 ms` |
-| `baselayer-browserarena-live-1780267105128` | 2026-05-31 | `100/100` | `90.0 ms` | `50.5 ms` | `82.7 ms` | `11.2 ms` | `211.8 ms` |
-| **Five-run average** | 2026-05-31 | **`498/500`** | **`90.3 ms`** | **`39.5 ms`** | **`83.0 ms`** | **`11.5 ms`** | **`211.4 ms`** |
+| `baselayer-browserarena-live-1780317402874` | 2026-06-01 | `98/100` | `74.2 ms` | `22.8 ms` | `82.8 ms` | `10.9 ms` | `190.8 ms` |
+| `baselayer-browserarena-live-1780317475105` | 2026-06-01 | `100/100` | `74.7 ms` | `31.8 ms` | `82.6 ms` | `11.3 ms` | `200.4 ms` |
+| `baselayer-browserarena-live-1780317525945` | 2026-06-01 | `100/100` | `75.1 ms` | `21.3 ms` | `83.2 ms` | `11.8 ms` | `191.4 ms` |
+| `baselayer-browserarena-live-1780317577522` | 2026-06-01 | `100/100` | `74.9 ms` | `54.4 ms` | `82.1 ms` | `11.8 ms` | `223.3 ms` |
+| `baselayer-browserarena-live-1780317628739` | 2026-06-01 | `100/100` | `74.8 ms` | `54.4 ms` | `82.6 ms` | `11.8 ms` | `223.6 ms` |
+| **Conservative headline run** | 2026-06-01 | **`100/100`** | **`74.8 ms`** | **`54.4 ms`** | **`82.6 ms`** | **`11.8 ms`** | **`223.6 ms`** |
+| **Pooled successful iterations** | 2026-06-01 | **`498/500`** | **`74.8 ms`** | **`47.6 ms`** | **`82.6 ms`** | **`11.3 ms`** | **`216.3 ms`** |
 
-The five-run average is `211.4 ms` p50 lifecycle across `498/500` successful
-sessions. Raw artifacts and the summary are in
-[`docs/benchmarks/browserarena-c1-final-2026-05-31/`](./benchmarks/browserarena-c1-final-2026-05-31/).
+For leaderboard-style comparisons, BaseLayer pools all successful iterations,
+computes the p50 of each lifecycle stage, then sums those stage p50s. The raw
+pooled per-iteration `total_ms.p50` for these same runs is `195.5 ms`; it is
+retained in the artifacts for auditing but is not the headline comparison
+number.
+
+The public headline uses the slowest clean `100/100` run from this five-run
+batch: `223.6 ms`, rounded to `224 ms`. The pooled stage-sum result across all
+successful iterations is `216.3 ms` across `498/500` successes. Raw artifacts
+and the summary are in
+[`docs/benchmarks/browserarena-c1-final-2026-06-01/`](./benchmarks/browserarena-c1-final-2026-06-01/).
 
 Against the BrowserArena c1 leaderboard snapshot checked on 2026-05-31, this
 positions BaseLayer above the top listed provider by p50 lifecycle latency:
 
 | Rank | Provider / variant | Lifecycle | Create | Connect | Goto | Release | Success |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | BaseLayer | `211 ms` | `90 ms` | `40 ms` | `83 ms` | `12 ms` | `498/500` |
+| 1 | BaseLayer | `224 ms` | `75 ms` | `54 ms` | `83 ms` | `12 ms` | `100/100` |
 | 2 | Notte | `401 ms` | `167 ms` | `110 ms` | `100 ms` | `24 ms` | `100/100` |
 | 3 | Kernel | `479 ms` | `39 ms` | `70 ms` | `169 ms` | `201 ms` | `100/100` |
 | 4 | Browserbase | `562 ms` | `110 ms` | `248 ms` | `122 ms` | `82 ms` | `100/100` |
@@ -52,7 +61,7 @@ This is a latency-positioning comparison, not an official leaderboard claim.
 
 ## Latest Concurrent Validation
 
-The current public headline is the sequential five-run average above. The
+The current public headline is the conservative sequential run above. The
 concurrent `c10 x10` path remains under review while the scheduler and live-demo
 harness are being hardened.
 

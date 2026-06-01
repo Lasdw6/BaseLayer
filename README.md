@@ -17,26 +17,33 @@ These are **self-hosted** BrowserArena-methodology runs.
 ### Latest Methodology Snapshot
 
 BrowserArena changed its default fairness URL to `example.com` on 2026-05-05.
-Using that current target, BaseLayer's latest five-run sequential self-hosted
-average was measured on 2026-05-31. The competitor positioning referenced in
+Using that current target, BaseLayer's latest conservative sequential
+self-hosted snapshot was measured on 2026-06-01. The competitor positioning referenced in
 [`docs/browserarena-results.md`](./docs/browserarena-results.md) uses
 BrowserArena c1 leaderboard numbers checked on 2026-05-31.
 
 In the BrowserArena c1 leaderboard snapshot checked on 2026-05-31, this places
 BaseLayer above the top listed provider by sequential p50 lifecycle latency.
+For leaderboard-style comparisons, BaseLayer pools all successful iterations,
+computes the p50 of each lifecycle stage, then sums those stage p50s. The raw
+per-iteration `total_ms.p50` is retained in artifacts for auditing, but it is
+not the headline comparison number.
 
 | Runtime / profile | Run date | Topology | Runs | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `baselayer-firecracker-headless-shell` | 2026-05-31 | AWS `t3.micro` runner -> AWS `m5zn.metal` host, `us-east-2`, BrowserArena stages, `http://example.com`, `c1 x100`, 5 repeats | 500 | `498/500` | `90.3 ms` | `39.5 ms` | `83.0 ms` | `11.5 ms` | `211.4 ms` |
+| `baselayer-firecracker-headless-shell` | 2026-06-01 | AWS `t3.micro` runner -> AWS `m5zn.metal` host, `us-east-2`, BrowserArena stages, `http://example.com`, `c1 x100`, slowest clean run from 5 repeats | 100 | `100/100` | `74.8 ms` | `54.4 ms` | `82.6 ms` | `11.8 ms` | `223.6 ms` |
 
-These are **self-hosted, sequential** benchmark results, averaged across five
-`c1 x100` runs on 2026-05-31. They are not official BrowserArena leaderboard
-submissions. The runs are reproducible, and this repo includes the
-[benchmark harness used, run artifacts, and replication notes](./docs/benchmarks/browserarena-c1-final-2026-05-31/).
+These are **self-hosted, sequential** benchmark results from five `c1 x100`
+runs on 2026-06-01. The public headline uses the slowest clean `100/100` run
+from that batch, rounded to `224 ms`, rather than the fastest or pooled value.
+The five-run batch ranged from `190.8 ms` to `223.6 ms`; pooled successful
+iterations summed to `216.3 ms` across `498/500` successes. These are not
+official BrowserArena leaderboard submissions. The runs are reproducible, and
+this repo includes the [benchmark harness used, run artifacts, and replication notes](./docs/benchmarks/browserarena-c1-final-2026-06-01/).
 
 The latest concurrent `c10 x10` run remains under review while the scheduler and
-demo harness are being hardened. The current public headline is the sequential
-five-run average above.
+demo harness are being hardened. The current public headline is the conservative
+sequential run above.
 
 See [`docs/browserarena-results.md`](./docs/browserarena-results.md) for the
 replication notes and caveats.

@@ -141,8 +141,13 @@ function phaseSummary(row) {
     session_connect_ms: metricP50(row, "session_connect_ms"),
     page_goto_ms: metricP50(row, "page_goto_ms"),
     session_release_ms: metricP50(row, "session_release_ms"),
-    total_ms: metricP50(row, "total_ms"),
+    total_iteration_ms: metricP50(row, "total_ms"),
   };
+  out.total_ms =
+    (out.session_creation_ms ?? 0) +
+    (out.session_connect_ms ?? 0) +
+    (out.page_goto_ms ?? 0) +
+    (out.session_release_ms ?? 0);
   return Object.values(out).some((v) => typeof v === "number" && Number.isFinite(v)) ? out : undefined;
 }
 

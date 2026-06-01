@@ -1,0 +1,115 @@
+{
+  "benchmark": "BaseLayer BrowserArena-style c1 sequential live rerun",
+  "date": "2026-06-01",
+  "methodology": "BrowserArena-style lifecycle stages: session create, CDP connect, page.goto, session release. Stage p50s are computed over successful iterations and summed for lifecycle p50.",
+  "headlinePolicy": "Use the slowest 100/100 run from the latest five-run batch as the public headline so the number is conservative instead of cherry-picked from the fastest run.",
+  "topology": {
+    "runner": "AWS t3.micro, us-east-2",
+    "providerHost": "AWS m5zn.metal, us-east-2",
+    "target": "http://example.com/",
+    "waitUntil": "domcontentloaded",
+    "shape": "c1 x100, repeated five times",
+    "runtime": "Firecracker + chromium-headless-shell",
+    "deletePath": "async API release with delayed node-agent teardown"
+  },
+  "conservativeHeadlineRun": {
+    "artifact": "baselayer-browserarena-live-1780317628739.json",
+    "success": "100/100",
+    "createMs": 74.84639799999968,
+    "connectMs": 54.380685499998435,
+    "gotoMs": 82.6319429999985,
+    "releaseMs": 11.772689499999615,
+    "lifecycleStageSumMs": 223.63171599999623,
+    "roundedLifecycleMs": 224,
+    "rawTotalP50Ms": 196.94365849999667
+  },
+  "pooledStageP50": {
+    "success": "498/500",
+    "createMs": 74.83066649999819,
+    "connectMs": 47.55797150000012,
+    "gotoMs": 82.62663749999956,
+    "releaseMs": 11.295306999998502,
+    "lifecycleStageSumMs": 216.31058249999637,
+    "rawTotalP50Ms": 195.54854700000215
+  },
+  "runs": [
+    {
+      "artifact": "baselayer-browserarena-live-1780317402874.json",
+      "runId": "baselayer-browserarena-live-1780317402874",
+      "date": "2026-06-01",
+      "attempts": 100,
+      "successes": 98,
+      "failures": 2,
+      "createMs": 74.17465350000202,
+      "connectMs": 22.84860900000058,
+      "gotoMs": 82.80029150000337,
+      "releaseMs": 10.945928000001004,
+      "lifecycleStageSumMs": 190.76948200000697,
+      "rawTotalP50Ms": 193.31953649999923,
+      "failureMessages": [
+        "session-create failed: 502 {\"error\":\"Node agent failed to create a session on host ip-172-31-21-229: 503 {\\\"error\\\":\\\"Timed out during Firecracker restore phase 'cdp-version' for session 603b3e33-eb72-4228-8b92-552409791e0b.\\\"}\"}",
+        "session-create failed: 502 {\"error\":\"Node agent failed to create a session on host ip-172-31-21-229: 503 {\\\"error\\\":\\\"Timed out during Firecracker restore phase 'cdp-version' for session c1c59d2c-63ed-4492-ad89-4fb60ba09f21.\\\"}\"}"
+      ]
+    },
+    {
+      "artifact": "baselayer-browserarena-live-1780317475105.json",
+      "runId": "baselayer-browserarena-live-1780317475105",
+      "date": "2026-06-01",
+      "attempts": 100,
+      "successes": 100,
+      "failures": 0,
+      "createMs": 74.7285084999994,
+      "connectMs": 31.81603450000057,
+      "gotoMs": 82.63331450000078,
+      "releaseMs": 11.259117999999035,
+      "lifecycleStageSumMs": 200.4369754999998,
+      "rawTotalP50Ms": 195.33188049999808,
+      "failureMessages": []
+    },
+    {
+      "artifact": "baselayer-browserarena-live-1780317525945.json",
+      "runId": "baselayer-browserarena-live-1780317525945",
+      "date": "2026-06-01",
+      "attempts": 100,
+      "successes": 100,
+      "failures": 0,
+      "createMs": 75.063231000001,
+      "connectMs": 21.271694500002923,
+      "gotoMs": 83.23829350000233,
+      "releaseMs": 11.803173000000356,
+      "lifecycleStageSumMs": 191.3763920000066,
+      "rawTotalP50Ms": 193.50651399999515,
+      "failureMessages": []
+    },
+    {
+      "artifact": "baselayer-browserarena-live-1780317577522.json",
+      "runId": "baselayer-browserarena-live-1780317577522",
+      "date": "2026-06-01",
+      "attempts": 100,
+      "successes": 100,
+      "failures": 0,
+      "createMs": 74.93215100000089,
+      "connectMs": 54.4050064999974,
+      "gotoMs": 82.13804200000232,
+      "releaseMs": 11.809726500000579,
+      "lifecycleStageSumMs": 223.28492600000118,
+      "rawTotalP50Ms": 197.05219450000368,
+      "failureMessages": []
+    },
+    {
+      "artifact": "baselayer-browserarena-live-1780317628739.json",
+      "runId": "baselayer-browserarena-live-1780317628739",
+      "date": "2026-06-01",
+      "attempts": 100,
+      "successes": 100,
+      "failures": 0,
+      "createMs": 74.84639799999968,
+      "connectMs": 54.380685499998435,
+      "gotoMs": 82.6319429999985,
+      "releaseMs": 11.772689499999615,
+      "lifecycleStageSumMs": 223.63171599999623,
+      "rawTotalP50Ms": 196.94365849999667,
+      "failureMessages": []
+    }
+  ]
+}

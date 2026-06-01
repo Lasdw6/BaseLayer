@@ -99,6 +99,11 @@ stage names while targeting a self-hosted BaseLayer endpoint:
 - `session_release_ms`
 - `total_ms`
 
+If you are using a coding agent to reproduce the run on fresh hosts, start with
+[reproduction-agent-prompt.md](./reproduction-agent-prompt.md). It includes the
+expected topology, smoke checks, headline-number calculation, and common failure
+modes.
+
 Recommended provider settings for the May 2026 `example.com` runs:
 
 ```bash
@@ -139,9 +144,13 @@ npm run bench:provider-api
 In this harness, `BENCH_RUNS=10` at `BENCH_CONCURRENCY=10` means 10 waves of
 10 sessions, or 100 measured sessions total.
 
-The May 2026 replication produced `331-332 ms` c1 p50 lifecycle across three
-`100`-run passes and `651.7 ms` c10 x10 p50 lifecycle with `100/100` success.
-See [browserarena-results.md](./browserarena-results.md) for the exact rows and
+The June 1, 2026 replication produced a conservative `223.6 ms` c1 p50
+lifecycle result, rounded to `224 ms`, by taking the slowest clean `100/100`
+run from a five-run `c1 x100` batch. For each run, the BrowserArena-style
+lifecycle is computed by taking each stage p50, then summing those stage p50s.
+The full five-run batch ranged from `190.8 ms` to `223.6 ms`; pooled successful
+iterations summed to `216.3 ms` across `498/500` successes. See
+[browserarena-results.md](./browserarena-results.md) for the exact rows and
 caveats.
 
 ## Output Shape

@@ -8,6 +8,7 @@ Recommended reading order:
 | Topic | File |
 | --- | --- |
 | Benchmark commands and output schema | [BENCHMARKS.md](./BENCHMARKS.md) |
+| Copy-paste reproduction agent prompt | [reproduction-agent-prompt.md](./reproduction-agent-prompt.md) |
 | Current maintained profiles | [current-best-profiles.md](./current-best-profiles.md) |
 | Public profile IDs and legacy aliases | [profile-naming-system.md](./profile-naming-system.md) |
 | Firecracker phase notes | [firecracker-phases.md](./firecracker-phases.md) |

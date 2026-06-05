@@ -149,6 +149,34 @@ function Invoke-ScpFrom {
   Invoke-Logged -Label "scp $RemotePath" -Command $scp -WorkDir $root -TimeoutSec ($TimeoutSec + 20) | Out-Null
 }
 
+function Invoke-ScpTo {
+  param(
+    [pscustomobject]$HostMeta,
+    [string]$LocalPath,
+    [string]$RemotePath,
+    [string]$LogPath,
+    [int]$TimeoutSec = 120
+  )
+
+  $root = Resolve-RepoRoot
+  $json = [System.IO.Path]::ChangeExtension($LogPath, ".json")
+  $scp = @(
+    "node scripts/ssh-run.mjs",
+    "--timeout-sec=$TimeoutSec",
+    "--log=`"$LogPath`"",
+    "--json-result=`"$json`"",
+    "--",
+    "scp.exe -q",
+    "-o StrictHostKeyChecking=no",
+    "-o UserKnownHostsFile=/dev/null",
+    "-o IdentitiesOnly=yes",
+    "-i `"$($HostMeta.keyPath)`"",
+    "`"$LocalPath`"",
+    "`"ubuntu@$($HostMeta.publicIp):$RemotePath`""
+  ) -join " "
+  Invoke-Logged -Label "scp $LocalPath" -Command $scp -WorkDir $root -TimeoutSec ($TimeoutSec + 20) | Out-Null
+}
+
 function Wait-ForSsh {
   param(
     [pscustomobject]$HostMeta,
@@ -269,6 +297,40 @@ function Setup-Runner {
     [pscustomobject]$Runner,
     [string]$LogDir
   )
+
+  if ($BrowserArenaPath) {
+    $resolvedBrowserArenaPath = (Resolve-Path $BrowserArenaPath).Path
+    $providerFile = Join-Path $resolvedBrowserArenaPath "src/providers/baselayer.ts"
+    if (-not (Test-Path -LiteralPath $providerFile)) {
+      throw "BrowserArena checkout at $resolvedBrowserArenaPath does not include src/providers/baselayer.ts."
+    }
+
+    $archivePath = Join-Path $LogDir "browserarena-runner-src.tgz"
+    $tarCommand = "tar --exclude=.git --exclude=node_modules --exclude=results --exclude=logs -czf `"$archivePath`" -C `"$resolvedBrowserArenaPath`" ."
+    Invoke-Logged -Label "package local BrowserArena checkout" -Command $tarCommand -TimeoutSec 300 | Out-Null
+
+    Invoke-Ssh -HostMeta $Runner -RemoteCommand "bash -lc 'rm -rf /home/ubuntu/browserarena /home/ubuntu/browserarena-src.tgz; mkdir -p /home/ubuntu/browserarena'" -LogPath (Join-Path $LogDir "prepare-runner-upload.log") -TimeoutSec $SshTimeoutSec
+    Invoke-ScpTo -HostMeta $Runner -LocalPath $archivePath -RemotePath "/home/ubuntu/browserarena-src.tgz" -LogPath (Join-Path $LogDir "upload-browserarena.log") -TimeoutSec 300
+
+    $remote = @"
+bash -lc 'set -euo pipefail
+sudo apt-get update -y
+sudo apt-get install -y git ca-certificates curl
+if ! command -v node >/dev/null 2>&1; then
+  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+  sudo apt-get install -y nodejs
+fi
+rm -rf /home/ubuntu/browserarena
+mkdir -p /home/ubuntu/browserarena
+tar -xzf /home/ubuntu/browserarena-src.tgz -C /home/ubuntu/browserarena
+cd /home/ubuntu/browserarena
+npm ci
+test -f src/providers/baselayer.ts || { echo "Uploaded BrowserArena checkout does not include src/providers/baselayer.ts."; exit 20; }
+'
+"@
+    Invoke-Ssh -HostMeta $Runner -RemoteCommand $remote -LogPath (Join-Path $LogDir "setup-runner.log") -TimeoutSec $SetupTimeoutSec
+    return
+  }
 
   $remote = @"
 bash -lc 'set -euo pipefail

@@ -45,6 +45,12 @@ The latest concurrent `c10 x10` run remains under review while the scheduler and
 demo harness are being hardened. The current public headline is the conservative
 sequential run above.
 
+The one-shot self-hosted BrowserArena runner now provisions the AWS `t3.micro`
+runner and `m5zn.metal` provider host, bootstraps BaseLayer, waits for warm-pool
+readiness, runs BrowserArena, pulls artifacts, and tears down resources. See
+[`docs/BENCHMARKS.md`](./docs/BENCHMARKS.md#one-shot-self-hosted-browserarena-runner)
+for the exact command and benchmark knobs.
+
 See [`docs/browserarena-results.md`](./docs/browserarena-results.md) for the
 replication notes and caveats.
 
@@ -191,7 +197,8 @@ topology when comparing numbers:
 - wait condition: `domcontentloaded`
 - runs: `100`
 - concurrency: `1`
-- no request blocking
+- bounded provider-side admission backpressure is allowed only when it is
+  counted inside `session_creation_ms`
 - async delete enabled for latency-style runs
 
 Shape:

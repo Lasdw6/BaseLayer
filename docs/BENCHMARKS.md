@@ -104,6 +104,74 @@ If you are using a coding agent to reproduce the run on fresh hosts, start with
 expected topology, smoke checks, headline-number calculation, and common failure
 modes.
 
+### One-Shot Self-Hosted BrowserArena Runner
+
+For the closest BrowserArena-style reproduction, use the self-hosted runner
+wrapper. In `runner` mode it provisions a fresh AWS `t3.micro` benchmark runner,
+provisions a fresh AWS `m5zn.metal` BaseLayer host in the same region, clones the
+requested BaseLayer ref onto the metal host, bootstraps Firecracker, waits for
+health and warm-pool readiness, runs BrowserArena from the `t3.micro`, pulls
+artifacts, writes `summary.json`, and tears down resources unless keep flags are
+provided.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\bench\run-browserarena-selfhosted.ps1 `
+  -Mode runner `
+  -Region us-west-2 `
+  -Repeats 1 `
+  -BaseLayerRepo https://github.com/Lasdw6/BaseLayer.git `
+  -BaseLayerRef browserarena-update `
+  -BrowserArenaPath C:\path\to\browserarena-with-baselayer-provider `
+  -Target https://example.com `
+  -Concurrency 1,10 `
+  -Runs 100 `
+  -OutDir .tmp/browserarena-selfhosted
+```
+
+Equivalent Node wrapper:
+
+```bash
+npm run bench:browserarena:selfhosted -- -- \
+  --mode runner \
+  --region us-west-2 \
+  --baselayer-repo https://github.com/Lasdw6/BaseLayer.git \
+  --baselayer-ref browserarena-update \
+  --browserarena-path ../browserarena-with-baselayer-provider \
+  --target https://example.com \
+  --concurrency 1,10 \
+  --runs 100
+```
+
+`--concurrency 1,10 --runs 100` runs BrowserArena `c1 x100` and `c10 x100`.
+For `c10`, BrowserArena runs 100 waves of 10 parallel sessions, or 1000 session
+attempts total.
+
+Current self-host runner knobs:
+
+| Setting | Value | Why it exists |
+| --- | ---: | --- |
+| `CONTROL_PLANE_ASYNC_SESSION_DELETE` | `1` | Releases return after the session is logically terminated; node-agent teardown runs asynchronously. |
+| `CONTROL_PLANE_TERMINATED_SESSION_RETENTION` | `25` | Keeps the control-plane JSON state bounded during long `c10 x100` runs. Without this, release latency grows as old terminated sessions accumulate. |
+| `CONTROL_PLANE_SCHEDULER_ADMISSION_WAIT_MS` | `30000` | Applies bounded provider-side backpressure when the host is temporarily saturated. The wait is counted inside BrowserArena `session_creation_ms`; it is not hidden from the benchmark. |
+| `CONTROL_PLANE_SCHEDULER_ADMISSION_POLL_MS` | `250` | Poll cadence while waiting for host admission capacity. |
+| `CONTROL_PLANE_HOST_DELETE_RESERVATION_TTL_MS` | `3000` | Keeps async-delete capacity reservations short while the node agent catches up. |
+| `CONTROL_PLANE_REMOTE_CREATE_TIMEOUT_MS` | `30000` | Bounds remote node-agent create calls. |
+| `CONTROL_PLANE_REMOTE_CREATE_RETRIES` | `0` | Avoids doubling create-reservation hold time during host contention. Local Firecracker restore retries still happen inside the node agent. |
+| `MAX_SESSIONS` | `20` | Base admission target for the single metal host. Warm-borrow logic can reuse prebuilt warm sessions above this where safe. |
+| `FIRECRACKER_MAX_MICROVM_COUNT` | `44` | Hard cap for active and warm Firecracker microVMs on the `m5zn.metal` host. |
+| `FIRECRACKER_NETWORK_POOL_SIZE` | `44` | Prepares one network slot per possible Firecracker microVM. |
+| `WARM_POOL_SIZE` | `20` | Maintains a pool of ready Chromium microVMs for BrowserArena create waves. |
+| `WARM_POOL_RESERVE` | `4` | Leaves headroom for warm-pool refill and active sessions. |
+| `WARM_POOL_FILL_CONCURRENCY` | `1` | Refills the warm pool conservatively to avoid IO/restore stampedes during c10 waves. |
+| `FIRECRACKER_LAUNCH_CONCURRENCY` | `4` | Caps concurrent warm preparation restores. |
+| `FIRECRACKER_COLD_RESTORE_CONCURRENCY` | `2` | Separates cold restore capacity from warm-pool refill capacity. |
+| `FIRECRACKER_WARM_CLAIM_TIMEOUT_MS` | `3000` | Bounds stale warm-VM claim validation. |
+
+The bounded admission wait is intentionally part of the provider create path.
+If the host is saturated, BrowserArena should see slower `session_creation_ms`,
+not a fast `503` that makes the run fail. A run is not considered clean unless
+the artifacts show the expected success count for each concurrency level.
+
 Recommended provider settings for the May 2026 `example.com` runs:
 
 ```bash
@@ -196,5 +264,6 @@ Targets and formulas: [provider-scorecard-metrics.md](./provider-scorecard-metri
   `data/benchmarks/`, `.tmp/`, or `artifacts/`.
 - Use `BENCH_BROWSERARENA_PAGE_URL=https://google.com/` only when reproducing
   historical Google-target rows.
-- Avoid request blocking or changed wait semantics for BrowserArena-methodology
-  comparisons.
+- Do not hide admission waits or navigation work outside the BrowserArena
+  lifecycle. If the provider queues under load, that wait belongs inside
+  `session_creation_ms`.

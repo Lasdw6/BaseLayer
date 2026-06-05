@@ -241,6 +241,9 @@ export class NodeAgent {
   readonly #firecrackerLaunchGate = new AsyncGate(agentConfig.firecrackerLaunchConcurrency);
   // Cold restores (warm-pool fallback + no-warm-profile path) get their own small gate.
   readonly #coldRestoreGate = new AsyncGate(agentConfig.firecrackerColdRestoreConcurrency);
+  // Warm claims are FIFO so older waiters get the next refilled VM instead of
+  // being starved by newer creates polling the shared warm pool.
+  readonly #firecrackerWarmClaimGate = new AsyncGate(1);
 
   readonly #crashEvents: number[] = [];
 
@@ -1044,6 +1047,30 @@ export class NodeAgent {
     sessionId: string,
     runtimeProfile: string,
   ): Promise<RuntimeLaunchResult> {
+    const releaseWarmClaimGate = await this.#firecrackerWarmClaimGate.acquire();
+    try {
+      return await this.#acquireWarmFirecrackerRuntimeExclusive(sessionId, runtimeProfile);
+    } catch (error) {
+      if (!agentConfig.firecrackerWarmFallbackToCold) {
+        throw error;
+      }
+    } finally {
+      releaseWarmClaimGate();
+    }
+
+    await this.#assertAdmission();
+    const releaseLaunchGate = await this.#coldRestoreGate.acquire();
+    try {
+      return await this.#firecracker.restoreSession(sessionId, {});
+    } finally {
+      releaseLaunchGate();
+    }
+  }
+
+  async #acquireWarmFirecrackerRuntimeExclusive(
+    sessionId: string,
+    runtimeProfile: string,
+  ): Promise<RuntimeLaunchResult> {
     const waitDeadlineMs =
       agentConfig.firecrackerWarmWaitMs > 0
         ? Date.now() + agentConfig.firecrackerWarmWaitMs
@@ -1095,13 +1122,9 @@ export class NodeAgent {
       );
     }
 
-    await this.#assertAdmission();
-    const releaseLaunchGate = await this.#coldRestoreGate.acquire();
-    try {
-      return await this.#firecracker.restoreSession(sessionId, {});
-    } finally {
-      releaseLaunchGate();
-    }
+    throw new Error(
+      `Warm Firecracker pool did not produce a ready session within ${agentConfig.firecrackerWarmWaitMs} ms.`,
+    );
   }
 
   async #prepareRuntime(

@@ -277,7 +277,14 @@ function Provision-Runner {
 
   $metaPath = if ($RunnerMetadataPath) { $RunnerMetadataPath } else { Join-Path $RunDir "runner.json" }
   $cmd = "& `"$PSScriptRoot\aws-provision-runner.ps1`" -Profile `"$AwsProfile`" -Region `"$Region`" -InstanceType `"$RunnerInstanceType`" -NamePrefix `"baselayer-browserarena-runner`" -MetadataPath `"$metaPath`""
-  Invoke-Logged -Label "provision runner" -Command $cmd -TimeoutSec 900 | Out-Null
+  try {
+    Invoke-Logged -Label "provision runner" -Command $cmd -TimeoutSec 900 | Out-Null
+  } catch {
+    if (-not (Test-Path -LiteralPath $metaPath)) {
+      throw
+    }
+    Write-Host "provision runner returned nonzero after writing metadata; continuing"
+  }
   return Get-Content $metaPath | ConvertFrom-Json
 }
 
@@ -290,7 +297,14 @@ function Provision-Metal {
   $metaPath = Join-Path $RunDir "metal.json"
   $openSsh = if ($NoOpenSshToWorld) { "" } else { "-OpenSshToWorld" }
   $cmd = "& `"$PSScriptRoot\aws-provision-baremetal.ps1`" -Profile `"$AwsProfile`" -Region `"$Region`" -InstanceType `"$MetalInstanceType`" -NamePrefix `"baselayer-browserarena-metal`" -VolumeSizeGb 100 -RunningTimeoutSec 600 -MetadataPath `"$metaPath`" $openSsh -OpenProviderPorts -ProviderAccessCidr `"$ProviderCidr`""
-  Invoke-Logged -Label "provision metal" -Command $cmd -TimeoutSec 1200 | Out-Null
+  try {
+    Invoke-Logged -Label "provision metal" -Command $cmd -TimeoutSec 1200 | Out-Null
+  } catch {
+    if (-not (Test-Path -LiteralPath $metaPath)) {
+      throw
+    }
+    Write-Host "provision metal returned nonzero after writing metadata; continuing"
+  }
   return Get-Content $metaPath | ConvertFrom-Json
 }
 

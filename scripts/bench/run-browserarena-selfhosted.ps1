@@ -285,7 +285,11 @@ function Wait-ForWarmPool {
     try {
       Invoke-Ssh -HostMeta $Metal -RemoteCommand $remote -LogPath (Join-Path $LogDir "warm-pool-$attempt.log") -TimeoutSec $SshTimeoutSec
       $log = Get-Content (Join-Path $LogDir "warm-pool-$attempt.log") -ErrorAction SilentlyContinue | Out-String
-      if ($log -match '"warmPoolDepth":\s*' + $ExpectedDepth -and $log -match '"warmPoolTarget":\s*' + $ExpectedDepth) {
+      $healthLine = ($log -split "`n" | Where-Object { $_ -match '^\{"ok":true,' } | Select-Object -Last 1)
+      if ($healthLine) {
+        $health = $healthLine | ConvertFrom-Json
+      }
+      if ($health -and $health.warmPoolDepth -ge $ExpectedDepth -and $health.warmPoolTarget -ge $ExpectedDepth) {
         return
       }
     } catch {

@@ -379,7 +379,19 @@ function Setup-Runner {
 
     $remote = @"
 bash -lc 'set -euo pipefail
-sudo apt-get update -y
+apt_update_retry() {
+  local attempt
+  for attempt in 1 2 3; do
+    if sudo apt-get update -y; then
+      return 0
+    fi
+    sudo rm -rf /var/lib/apt/lists/*
+    sudo mkdir -p /var/lib/apt/lists/partial
+    sleep `$((attempt * 5))
+  done
+  sudo apt-get update -y
+}
+apt_update_retry
 sudo apt-get install -y git ca-certificates curl
 if ! command -v node >/dev/null 2>&1; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
@@ -399,7 +411,19 @@ test -f src/providers/baselayer.ts || { echo "Uploaded BrowserArena checkout doe
 
   $remote = @"
 bash -lc 'set -euo pipefail
-sudo apt-get update -y
+apt_update_retry() {
+  local attempt
+  for attempt in 1 2 3; do
+    if sudo apt-get update -y; then
+      return 0
+    fi
+    sudo rm -rf /var/lib/apt/lists/*
+    sudo mkdir -p /var/lib/apt/lists/partial
+    sleep `$((attempt * 5))
+  done
+  sudo apt-get update -y
+}
+apt_update_retry
 sudo apt-get install -y git ca-certificates curl
 if ! command -v node >/dev/null 2>&1; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
@@ -423,7 +447,19 @@ function Setup-Metal {
 
   $clone = @"
 bash -lc 'set -euo pipefail
-sudo apt-get update -y
+apt_update_retry() {
+  local attempt
+  for attempt in 1 2 3; do
+    if sudo apt-get update -y; then
+      return 0
+    fi
+    sudo rm -rf /var/lib/apt/lists/*
+    sudo mkdir -p /var/lib/apt/lists/partial
+    sleep `$((attempt * 5))
+  done
+  sudo apt-get update -y
+}
+apt_update_retry
 sudo apt-get install -y git ca-certificates curl
 rm -rf /home/ubuntu/baselayer
 git clone --depth 1 --branch "$BaseLayerRef" "$BaseLayerRepo" /home/ubuntu/baselayer

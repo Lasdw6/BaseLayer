@@ -86,10 +86,12 @@ EOF
 
 grant_kvm_access
 
+FIRECRACKER_CI_VERSION=""
 if ! command -v firecracker >/dev/null 2>&1; then
   ARCH=$(uname -m)
   RELEASE_URL="https://github.com/firecracker-microvm/firecracker/releases"
   LATEST=$(basename "$(curl -fsSLI -o /dev/null -w '%{url_effective}' "${RELEASE_URL}/latest")")
+  FIRECRACKER_CI_VERSION="$(echo "${LATEST#v}" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')"
   TMP_DIR=$(mktemp -d)
   trap 'rm -rf "$TMP_DIR"' EXIT
   curl -L "${RELEASE_URL}/download/${LATEST}/firecracker-${LATEST}-${ARCH}.tgz" | tar -xz -C "$TMP_DIR"
@@ -155,10 +157,13 @@ if [ ! -f "$ARTIFACT_DIR/vmlinux" ]; then
   # comparisons.
   KERNEL_VERSION="${FIRECRACKER_KERNEL_VERSION:-}"
   CI_VERSION=$(
-    firecracker --version 2>/dev/null |
+    (firecracker --version 2>/dev/null || true) |
       head -n 1 |
-      sed -E 's/^Firecracker v([0-9]+\.[0-9]+).*/\1/'
+      sed -E 's/^Firecracker v([0-9]+\.[0-9]+).*/\1/' || true
   )
+  if [ -z "$CI_VERSION" ] && [ -n "$FIRECRACKER_CI_VERSION" ]; then
+    CI_VERSION="$FIRECRACKER_CI_VERSION"
+  fi
   if [ -z "$CI_VERSION" ]; then
     echo "Could not parse Firecracker version for kernel download." >&2
     exit 1

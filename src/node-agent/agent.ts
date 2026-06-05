@@ -898,9 +898,22 @@ export class NodeAgent {
                 // readiness ('cdp-version'/'cdp-websocket-upgrade') on cold rounds.
                 const releaseLaunchGate = await this.#firecrackerLaunchGate.acquire();
                 try {
-                  await this.#firecracker.prepareWarmSession(warmSessionId, {
-                    runtimeProfile,
-                  });
+                  const prepareTimeoutMs = Math.max(
+                    45_000,
+                    agentConfig.firecrackerRestoreTimeoutMs +
+                      agentConfig.firecrackerWarmClaimTimeoutMs +
+                      5_000,
+                  );
+                  await Promise.race([
+                    this.#firecracker.prepareWarmSession(warmSessionId, {
+                      runtimeProfile,
+                    }),
+                    sleep(prepareTimeoutMs).then(() => {
+                      throw new Error(
+                        `Timed out preparing warm Firecracker session after ${prepareTimeoutMs} ms.`,
+                      );
+                    }),
+                  ]);
                 } finally {
                   releaseLaunchGate();
                 }
@@ -915,6 +928,7 @@ export class NodeAgent {
                   sessionId: warmSessionId,
                   runtimeProfile,
                 });
+                await this.#firecracker.terminateSession(warmSessionId).catch(() => undefined);
               } finally {
                 this.#preparingWarmRuntimeCount = Math.max(0, this.#preparingWarmRuntimeCount - 1);
               }

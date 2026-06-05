@@ -506,6 +506,13 @@ $manifest = [ordered]@{
   repeatsData = @()
 }
 
+if ($Repeats -le 0) {
+  $manifest.finishedAt = (Get-Date).ToUniversalTime().ToString("o")
+  $manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $runRoot "manifest.json") -Encoding UTF8
+  Write-Host "selfhosted-run-dir=$runRoot"
+  exit 0
+}
+
 $runner = $null
 try {
   if ($Mode -eq "runner") {

@@ -6,7 +6,20 @@ export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 ROOT="${1:-$PWD}"
 ARTIFACT_DIR="${FIRECRACKER_ARTIFACT_DIR:-$ROOT/artifacts/firecracker}"
 
-sudo apt-get update
+apt_update_retry() {
+  local attempt
+  for attempt in 1 2 3; do
+    if sudo apt-get update; then
+      return 0
+    fi
+    sudo rm -rf /var/lib/apt/lists/*
+    sudo mkdir -p /var/lib/apt/lists/partial
+    sleep $((attempt * 5))
+  done
+  sudo apt-get update
+}
+
+apt_update_retry
 sudo apt-get install -y \
   acl \
   bridge-utils \

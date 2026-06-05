@@ -168,6 +168,7 @@ Current self-host runner knobs:
 | `FIRECRACKER_LAUNCH_CONCURRENCY` | `4` | Caps concurrent warm preparation restores. |
 | `FIRECRACKER_COLD_RESTORE_CONCURRENCY` | `2` | Separates cold restore capacity from warm-pool refill capacity. |
 | `FIRECRACKER_WARM_CLAIM_TIMEOUT_MS` | `3000` | Bounds stale warm-VM claim validation. |
+| `FIRECRACKER_WARM_CLAIM_SETTLE_MS` | `75` | Adds a small post-validation settle before returning a claimed warm CDP endpoint. |
 | `FIRECRACKER_WARM_WAIT_MS` | `85000` | Makes a c10 create wait for warm-pool refill before falling back. The wait is counted inside BrowserArena `session_creation_ms`. |
 | `FIRECRACKER_WARM_FALLBACK_TO_COLD` | `0` | Keeps BrowserArena self-host runs on the warm restore path instead of letting temporary pool drain trigger cold-restore storms. |
 

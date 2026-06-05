@@ -368,7 +368,7 @@ bash -lc 'set -euo pipefail
 cd /home/ubuntu/browserarena
 DATE="`$(date -u +%F)"
 rm -rf "results/hello-browser/baselayer/`$DATE"
-BASELAYER_API_URL="$api" BASELAYER_RUNTIME_PROFILE="$RuntimeProfile" npm run bench -- \
+BASELAYER_API_URL="$api" BASELAYER_BASE_URL="$api" BASELAYER_RUNTIME_PROFILE="$RuntimeProfile" npm run bench -- \
   --benchmark=hello-browser \
   --provider=baselayer \
   --concurrency=$Concurrency \
@@ -397,6 +397,7 @@ function Run-Benchmark-Local {
   $api = "http://$($Metal.publicIp):3000"
   $cmd = @"
 `$env:BASELAYER_API_URL="$api";
+`$env:BASELAYER_BASE_URL="$api";
 `$env:BASELAYER_RUNTIME_PROFILE="$RuntimeProfile";
 npm run bench -- --benchmark=hello-browser --provider=baselayer --concurrency=$Concurrency --runs=$Runs --url="$Target"
 "@

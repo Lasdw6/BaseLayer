@@ -273,7 +273,7 @@ function Wait-ForWarmPool {
   param(
     [pscustomobject]$Metal,
     [string]$LogDir,
-    [int]$ExpectedDepth = 30,
+    [int]$ExpectedDepth = 40,
     [int]$TimeoutSec = 1200
   )
 
@@ -509,9 +509,9 @@ nohup sudo -E env \
   MAX_SESSIONS=20 \
   FIRECRACKER_MAX_MICROVM_COUNT=44 \
   FIRECRACKER_NETWORK_POOL_SIZE=44 \
-  WARM_POOL_SIZE=30 \
+  WARM_POOL_SIZE=40 \
   WARM_POOL_RESERVE=4 \
-  WARM_POOL_FILL_CONCURRENCY=8 \
+  WARM_POOL_FILL_CONCURRENCY=4 \
   NODE_AGENT_LAUNCH_ADMISSION_WAIT_MS=85000 \
   NODE_AGENT_LAUNCH_ADMISSION_POLL_MS=100 \
   FIRECRACKER_LAUNCH_CONCURRENCY=4 \

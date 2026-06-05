@@ -132,6 +132,8 @@ export const agentConfig = {
   warmPoolReserve: envInt("WARM_POOL_RESERVE", 0),
   warmPoolFillConcurrency: envInt("WARM_POOL_FILL_CONCURRENCY", 3),
   warmRuntimeSettleMs: envInt("WARM_RUNTIME_SETTLE_MS", 250),
+  launchAdmissionWaitMs: envInt("NODE_AGENT_LAUNCH_ADMISSION_WAIT_MS", 0),
+  launchAdmissionPollMs: envInt("NODE_AGENT_LAUNCH_ADMISSION_POLL_MS", 100),
   keepFailedRuntimes: envString("KEEP_FAILED_RUNTIMES", "") === "1",
   sessionMemoryLimitMb: envInt("SESSION_MEMORY_LIMIT_MB", 384),
   sessionMemoryReservationMb: envInt("SESSION_MEMORY_RESERVATION_MB", 256),

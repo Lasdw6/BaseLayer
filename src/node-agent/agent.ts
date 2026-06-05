@@ -489,7 +489,7 @@ export class NodeAgent {
   }
 
   async launchSession(input: CreateSessionRequest & { sessionId: string }): Promise<RuntimeLaunchResult> {
-    const releaseReservation = this.#reserveLaunchSlot(input.sessionId);
+    const releaseReservation = await this.#reserveLaunchSlot(input.sessionId);
     let releaseLaunchGate: (() => void) | undefined;
     let trackedFirecrackerLaunch = false;
 
@@ -1203,24 +1203,41 @@ export class NodeAgent {
     }
   }
 
-  #reserveLaunchSlot(sessionId: string): () => void {
+  #hasLaunchCapacity(): boolean {
     // Allow borrowing up to warm-ready depth above maxSessions: a warm claim consumes a
     // pre-built microVM (already counted against the real microVM cap), so it adds no new
     // capacity. This mirrors the scheduler + deriveStatus warm-borrow escapes so the
     // agent doesn't reject warm-claimable creates that the control plane admitted.
     const warmReadyForBorrow =
       agentConfig.mode === "firecracker" ? this.#firecrackerWarmPoolSessionIds.length : 0;
-    if (
-      this.#sessions.size + this.#launchReservationCount() >=
+    return (
+      this.#sessions.size + this.#launchReservationCount() <
       agentConfig.maxSessions + warmReadyForBorrow
-    ) {
-      throw new Error("Host is at its configured session capacity.");
-    }
+    );
+  }
 
-    this.#launchReservations.set(sessionId, Date.now());
-    return () => {
-      this.#launchReservations.delete(sessionId);
-    };
+  async #reserveLaunchSlot(sessionId: string): Promise<() => void> {
+    const waitMs = Math.max(0, agentConfig.launchAdmissionWaitMs);
+    const deadlineMs = waitMs > 0 ? Date.now() + waitMs : 0;
+
+    while (true) {
+      this.#pruneStaleLaunchReservations();
+      if (this.#hasLaunchCapacity()) {
+        this.#launchReservations.set(sessionId, Date.now());
+        return () => {
+          this.#launchReservations.delete(sessionId);
+        };
+      }
+
+      if (deadlineMs <= 0 || Date.now() >= deadlineMs) {
+        throw new Error("Host is at its configured session capacity.");
+      }
+
+      await sleep(Math.min(
+        Math.max(25, agentConfig.launchAdmissionPollMs),
+        Math.max(1, deadlineMs - Date.now()),
+      ));
+    }
   }
 
   #sessionFootprintSummary(): {

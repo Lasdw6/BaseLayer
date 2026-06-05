@@ -637,20 +637,12 @@ async function deleteSessionFromRequest(
           }
         : undefined,
   });
-  store.commitSessionMutation({
-    session: {
-      ...(persistedBase.session ?? session),
-      controlPlaneTimings: {
-        ...(persistedBase.session?.controlPlaneTimings ?? session.controlPlaneTimings),
-        delete: {
-          totalMs,
-          remoteDeleteMs,
-          persistMs: persistedBase.persistMs,
-          async: asyncDelete,
-        },
-      },
-    },
-  });
+  // Single full-state write per delete: the stored record carries persistMs: 0 as a
+  // placeholder because the persist duration is only known after the write returns.
+  // The accurate value is reported via the Server-Timing header below from
+  // persistedBase.persistMs; nothing reads delete.persistMs back from the store, so a
+  // second commit purely to backfill it is wasted work that serializes hard on the
+  // store lock under concurrent release (c10).
 
   if (asyncDelete) {
     void deleteRemoteSession(host, sessionId).catch((error) => {

@@ -142,15 +142,14 @@ $amiId = Invoke-AwsText @(
 
 $keyName = $name
 $keyPath = Join-Path (Resolve-Path ".tmp").Path "$keyName.pem"
-$keyMaterial = Invoke-AwsText @(
+$keyPair = Invoke-AwsJson @(
   "ec2","create-key-pair",
   "--profile",$Profile,
   "--region",$Region,
   "--key-name",$keyName,
-  "--query","KeyMaterial",
-  "--output","text"
+  "--output","json"
 )
-[System.IO.File]::WriteAllText($keyPath, $keyMaterial, [System.Text.Encoding]::ASCII)
+[System.IO.File]::WriteAllText($keyPath, $keyPair.KeyMaterial, [System.Text.Encoding]::ASCII)
 Set-PrivateKeyAcl -Path $keyPath
 
 $sg = Invoke-AwsJson @(

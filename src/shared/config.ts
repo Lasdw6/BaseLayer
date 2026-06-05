@@ -240,6 +240,12 @@ export const agentConfig = {
     envInt("MAX_SESSIONS", 6),
   ),
   firecrackerLaunchConcurrency: envInt("FIRECRACKER_LAUNCH_CONCURRENCY", 0),
+  /**
+   * Concurrency cap for COLD restores only (warm-pool fallback + no-warm-profile path),
+   * held on a gate separate from warm-prep so a cold-restore burst can never starve warm
+   * refill. Keep small: this is the rare path; warm-prep stays on firecrackerLaunchConcurrency.
+   */
+  firecrackerColdRestoreConcurrency: envInt("FIRECRACKER_COLD_RESTORE_CONCURRENCY", 2),
   /** 0 = unlimited. Reject new sessions when this many microVMs are in `active-navigation` (goto pressure). */
   firecrackerMaxConcurrentActiveNavigation: envInt(
     "FIRECRACKER_MAX_CONCURRENT_ACTIVE_NAVIGATION",

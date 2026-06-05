@@ -49,6 +49,7 @@
     "bench:snapshot": "npm run build && tsx src/bench/snapshot.ts",
     "bench:verify-defaults": "node scripts/bench/verify-benchmark-host-defaults.mjs",
     "bench:summarize-phase": "node scripts/bench/adhoc/summarize-provider-phase-summary.mjs",
+    "bench:browserarena:selfhosted": "node scripts/bench/run-browserarena-selfhosted.mjs",
     "start:api": "node dist/api/server.js",
     "start:agent": "node dist/node-agent/server.js",
     "start:runtime": "node dist/runtime/server.js",

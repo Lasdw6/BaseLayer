@@ -71,6 +71,12 @@ export function shouldRetryFirecrackerRestoreError(error: unknown): boolean {
     message.includes("/json/version") ||
     message.includes("/json/list") ||
     message.includes("websocket upgrade") ||
+    // Phase-WRAPPER timeouts (runRestorePhase: "...restore phase '<phase>'...") for the
+    // CDP readiness phases. Their messages carry the hyphenated phase name (e.g.
+    // 'cdp-websocket-upgrade', 'cdp-target-list') with no URL/127.0.0.1, so they would
+    // otherwise miss every clause above and NOT retry — these are transient readiness
+    // timeouts under load and are exactly the user-facing c10 create failures.
+    message.includes("restore phase 'cdp-") ||
     (message.includes("timed out") && message.includes("127.0.0.1")) ||
     (message.includes("fetch failed") && message.includes("127.0.0.1"))
   );
@@ -1812,6 +1818,9 @@ export class FirecrackerOrchestrator {
             agentConfig.firecrackerRestoreTimeoutMs,
             Math.max(1_000, agentConfig.firecrackerWarmClaimTimeoutMs),
           ),
+          // Keep background validation cheap and non-invasive. Claim-time validation
+          // verifies the real WebSocket upgrade immediately before handing the VM to a
+          // benchmark request.
           verifyWebSocketUpgrade: false,
         });
       } catch (error) {
@@ -1826,8 +1835,8 @@ export class FirecrackerOrchestrator {
         this.#warmSessionLastProbeAt.delete(warmSessionId);
         this.#sessions.delete(warmSessionId);
         this.#schedulerStates.delete(warmSessionId);
-        this.#markSlotUnhealthy(machine.networkSlotId);
         await this.#destroyMachine(machine, true).catch(() => undefined);
+        this.#markSlotUnhealthy(machine.networkSlotId);
       }
     }
   }
@@ -1950,8 +1959,8 @@ export class FirecrackerOrchestrator {
       this.#sessions.delete(sessionId);
       this.#schedulerStates.delete(sessionId);
       this.#warmSessionLastProbeAt.delete(sessionId);
-      this.#markSlotUnhealthy(machine.networkSlotId);
       await this.#destroyMachine(machine, true).catch(() => undefined);
+      this.#markSlotUnhealthy(machine.networkSlotId);
       throw error;
     }
   }
@@ -1989,8 +1998,13 @@ export class FirecrackerOrchestrator {
     try {
       machine.startedAt = new Date().toISOString();
       await this.#setSchedulerState(requestedSessionId, machine, "launching");
+      // Validate the actual WebSocket upgrade at claim time, not just HTTP
+      // /json/version. The consumer (connectOverCDP) opens a CDP WebSocket, so a warm
+      // VM whose HTTP relay answers but whose WS layer is dead would otherwise be
+      // handed over and fail on connect. On failure the catch below evicts the machine
+      // and the caller falls through to the next warm session or a cold restore.
       const browserWsPath = await this.#verifyWarmMachine(machine, {
-        verifyWebSocketUpgrade: false,
+        verifyWebSocketUpgrade: true,
       });
 
       return {
@@ -2019,8 +2033,8 @@ export class FirecrackerOrchestrator {
       this.#sessions.delete(requestedSessionId);
       this.#schedulerStates.delete(requestedSessionId);
       this.#warmSessionLastProbeAt.delete(requestedSessionId);
-      this.#markSlotUnhealthy(machine.networkSlotId);
       await this.#destroyMachine(machine, true).catch(() => undefined);
+      this.#markSlotUnhealthy(machine.networkSlotId);
       return undefined;
     }
   }
@@ -3008,8 +3022,6 @@ export class FirecrackerOrchestrator {
       slot.tapName,
       slot.rootVethName,
       slot.nsVethName,
-      slot.rootVethIp,
-      slot.nsVethIp,
     ];
     const helperLinesPass1 = await readPsProcessLines();
     const helperPids = [

@@ -23,6 +23,11 @@ const optionMap = new Map([
   ["repeats", "Repeats"],
   ["runtime-profile", "RuntimeProfile"],
   ["runner-metadata-path", "RunnerMetadataPath"],
+  ["metal-public-ip", "MetalPublicIp"],
+  ["metal-ssh-key-path", "MetalSshKeyPath"],
+  ["metal-ssh-user", "MetalSshUser"],
+  ["metal-remote-cwd", "MetalRemoteCwd"],
+  ["metal-instance-id", "MetalInstanceId"],
   ["ssh-timeout-sec", "SshTimeoutSec"],
   ["setup-timeout-sec", "SetupTimeoutSec"],
   ["bench-timeout-sec", "BenchTimeoutSec"],
@@ -35,6 +40,7 @@ const switchMap = new Map([
   ["keep-runner", "KeepRunner"],
   ["skip-metal-bootstrap", "SkipMetalBootstrap"],
   ["no-open-ssh-to-world", "NoOpenSshToWorld"],
+  ["use-running-baselayer", "UseRunningBaseLayer"],
 ]);
 
 function usage() {
@@ -58,11 +64,14 @@ Common options:
   --runs 100
   --repeats 1
   --reuse-runner --runner-metadata-path .tmp/runner.json
+  --metal-public-ip <ip> --metal-ssh-key-path <key.pem>
+  --use-running-baselayer                 use an already-running BaseLayer API on the supplied metal host
   --keep-metal
   --keep-runner
   --skip-metal-bootstrap
 
-The script provisions fresh metal, sets up BaseLayer from the requested repo/ref,
+The script provisions fresh metal unless --metal-public-ip is supplied, sets up
+BaseLayer from the requested repo/ref unless --use-running-baselayer is supplied,
 waits for health + warm pool readiness, runs BrowserArena, pulls artifacts, writes
 summary.json, and tears down resources unless keep flags are provided.`);
 }

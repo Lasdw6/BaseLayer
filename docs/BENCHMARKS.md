@@ -142,6 +142,40 @@ npm run bench:browserarena:selfhosted -- -- \
   --runs 100
 ```
 
+To reuse an already-provisioned metal host, pass its public IP and SSH key. This
+keeps the BrowserArena runner flow the same, but skips AWS metal provisioning and
+leaves the supplied metal host running after the benchmark:
+
+```bash
+npm run bench:browserarena:selfhosted -- -- \
+  --mode runner \
+  --region us-west-2 \
+  --metal-public-ip 203.0.113.10 \
+  --metal-ssh-key-path .tmp/baselayer-metal.pem \
+  --baselayer-repo https://github.com/Lasdw6/BaseLayer.git \
+  --baselayer-ref browserarena-update \
+  --target https://example.com \
+  --concurrency 1,10 \
+  --runs 100
+```
+
+If the metal host is already set up and BaseLayer is already exposing its
+production-compatible API on port `3000`, add `--use-running-baselayer`. In that
+mode the harness only waits for BaseLayer health and warm-pool readiness before
+running BrowserArena:
+
+```bash
+npm run bench:browserarena:selfhosted -- -- \
+  --mode runner \
+  --region us-west-2 \
+  --metal-public-ip 203.0.113.10 \
+  --metal-ssh-key-path .tmp/baselayer-metal.pem \
+  --use-running-baselayer \
+  --target https://example.com \
+  --concurrency 1,10 \
+  --runs 100
+```
+
 `--concurrency 1,10 --runs 100` runs BrowserArena `c1 x100` and `c10 x100`.
 For `c10`, BrowserArena runs 100 waves of 10 parallel sessions, or 1000 session
 attempts total.

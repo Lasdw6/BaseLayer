@@ -20,6 +20,12 @@ param(
   [string]$RuntimeProfile = "BaseLayer-Mew-firecracker-headless-shell",
 
   [string]$RunnerMetadataPath = "",
+  [string]$MetalPublicIp = "",
+  [string]$MetalSshKeyPath = "",
+  [string]$MetalSshUser = "ubuntu",
+  [string]$MetalRemoteCwd = "/home/ubuntu/baselayer",
+  [string]$MetalInstanceId = "",
+  [switch]$UseRunningBaseLayer,
   [switch]$ReuseRunner,
   [switch]$KeepMetal,
   [switch]$KeepRunner,
@@ -39,6 +45,9 @@ $ErrorActionPreference = "Stop"
 # Modes:
 #   runner: provision/use a t3.micro runner, provision fresh metal, run BrowserArena over SSH.
 #   local:  provision fresh metal, run BrowserArena from a local checkout passed via -BrowserArenaPath.
+# Reuse a preprovisioned metal host by passing -MetalPublicIp and -MetalSshKeyPath.
+# Add -UseRunningBaseLayer when the host already exposes the production-compatible
+# BaseLayer API on :3000 and should not be recloned/restarted.
 #
 # The BaseLayer metal host is always set up from -BaseLayerRepo/-BaseLayerRef so the
 # benchmark exercises the current repo scripts rather than a hidden hand-built host.
@@ -357,6 +366,41 @@ function Provision-Metal {
   throw "Failed to provision metal."
 }
 
+function Get-PreprovisionedMetal {
+  param([string]$RunDir)
+
+  if (-not $MetalPublicIp) {
+    return $null
+  }
+  if (-not $MetalSshKeyPath) {
+    throw "-MetalPublicIp requires -MetalSshKeyPath so the harness can set up, start, and collect diagnostics from the host."
+  }
+  if (-not (Test-Path -LiteralPath $MetalSshKeyPath)) {
+    throw "Metal SSH key does not exist: $MetalSshKeyPath"
+  }
+
+  $meta = [ordered]@{
+    profile = $AwsProfile
+    region = $Region
+    instanceType = $MetalInstanceType
+    name = "preprovisioned-metal"
+    instanceId = $MetalInstanceId
+    publicIp = $MetalPublicIp
+    publicDnsName = $MetalPublicIp
+    privateIp = ""
+    loginUser = $MetalSshUser
+    keyPath = (Resolve-Path $MetalSshKeyPath).Path
+    remoteCwd = $MetalRemoteCwd
+    preprovisioned = $true
+    useRunningBaseLayer = [bool]$UseRunningBaseLayer
+    createdAt = (Get-Date).ToUniversalTime().ToString("o")
+  }
+
+  $metaPath = Join-Path $RunDir "metal.json"
+  $meta | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $metaPath -Encoding UTF8
+  return [pscustomobject]$meta
+}
+
 function Get-RunnerAccessCidr {
   param([pscustomobject]$Runner)
   if ($Mode -eq "runner") {
@@ -502,6 +546,7 @@ function Setup-Metal {
     [string]$LogDir
   )
 
+  $remoteCwd = if ($Metal.remoteCwd) { $Metal.remoteCwd } else { $MetalRemoteCwd }
   $clone = @"
 bash -lc 'set -euo pipefail
 apt_update_retry() {
@@ -518,15 +563,16 @@ apt_update_retry() {
 }
 apt_update_retry
 sudo apt-get install -y git ca-certificates curl
-rm -rf /home/ubuntu/baselayer
-git clone --depth 1 --branch "$BaseLayerRef" "$BaseLayerRepo" /home/ubuntu/baselayer
-sudo chown -R ubuntu:ubuntu /home/ubuntu/baselayer
+rm -rf "$remoteCwd"
+mkdir -p "`$(dirname "$remoteCwd")"
+git clone --depth 1 --branch "$BaseLayerRef" "$BaseLayerRepo" "$remoteCwd"
+sudo chown -R ubuntu:ubuntu "$remoteCwd"
 '
 "@
   Invoke-Ssh -HostMeta $Metal -RemoteCommand $clone -LogPath (Join-Path $LogDir "clone-baselayer.log") -TimeoutSec 900
 
   if (-not $SkipMetalBootstrap) {
-    $bootstrap = "bash -lc 'cd /home/ubuntu/baselayer && sudo -E bash scripts/bench/bootstrap-baremetal-provider-host.sh'"
+    $bootstrap = "bash -lc 'cd `"$remoteCwd`" && sudo -E bash scripts/bench/bootstrap-baremetal-provider-host.sh'"
     Invoke-Ssh -HostMeta $Metal -RemoteCommand $bootstrap -LogPath (Join-Path $LogDir "bootstrap-metal.log") -TimeoutSec $SetupTimeoutSec
   }
 }
@@ -538,9 +584,10 @@ function Start-BaseLayer {
   )
 
   $publicIp = $Metal.publicIp
+  $remoteCwd = if ($Metal.remoteCwd) { $Metal.remoteCwd } else { $MetalRemoteCwd }
   $remote = @"
 bash -lc 'set -euo pipefail
-cd /home/ubuntu/baselayer
+cd "$remoteCwd"
 sudo pkill -9 node || true
 sudo pkill -9 firecracker || true
 sudo pkill -9 socat || true
@@ -574,8 +621,8 @@ nohup sudo -E env \
   BASELAYER_SUPPORTED_RUNTIME_PROFILES="$RuntimeProfile" \
   BASELAYER_RESET_STATE_ON_START=1 \
   BASELAYER_DISABLE_IRQBALANCE=1 \
-  bash ./scripts/bench/aws-start-public-baselayer.sh /home/ubuntu/baselayer "$publicIp" \
-  > /home/ubuntu/baselayer/baselayer-selfhosted.log 2>&1 < /dev/null &
+  bash ./scripts/bench/aws-start-public-baselayer.sh "$remoteCwd" "$publicIp" \
+  > "$remoteCwd/baselayer-selfhosted.log" 2>&1 < /dev/null &
 echo baselayer-started
 '
 "@
@@ -663,17 +710,18 @@ function Pull-MetalDiagnostics {
   $diagDir = Join-Path $LogDir "metal-diagnostics"
   New-Item -ItemType Directory -Force -Path $diagDir | Out-Null
 
-  $remote = @'
+  $remoteCwd = if ($Metal.remoteCwd) { $Metal.remoteCwd } else { $MetalRemoteCwd }
+  $remote = @"
 bash -lc 'set +e
-cd /home/ubuntu/baselayer 2>/dev/null || exit 0
+cd "$remoteCwd" 2>/dev/null || exit 0
 mkdir -p /tmp/baselayer-selfhosted-diagnostics
-cp /home/ubuntu/baselayer/baselayer-selfhosted.log /tmp/baselayer-selfhosted-diagnostics/baselayer-selfhosted.log 2>/dev/null || true
-cp /home/ubuntu/baselayer/data/state.json /tmp/baselayer-selfhosted-diagnostics/state.json 2>/dev/null || true
+cp "$remoteCwd/baselayer-selfhosted.log" /tmp/baselayer-selfhosted-diagnostics/baselayer-selfhosted.log 2>/dev/null || true
+cp "$remoteCwd/data/state.json" /tmp/baselayer-selfhosted-diagnostics/state.json 2>/dev/null || true
 curl -fsS http://127.0.0.1:3000/health > /tmp/baselayer-selfhosted-diagnostics/control-plane-health.json 2>/dev/null || true
 curl -fsS http://127.0.0.1:4000/health > /tmp/baselayer-selfhosted-diagnostics/node-agent-health.json 2>/dev/null || true
 tar -C /tmp -czf /tmp/baselayer-selfhosted-diagnostics.tgz baselayer-selfhosted-diagnostics
 '
-'@
+"@
 
   try {
     Invoke-Ssh -HostMeta $Metal -RemoteCommand $remote -LogPath (Join-Path $LogDir "collect-metal-diagnostics.log") -TimeoutSec 30
@@ -764,6 +812,9 @@ $manifest = [ordered]@{
   runs = $Runs
   repeats = $Repeats
   runtimeProfile = $RuntimeProfile
+  metalPublicIp = $MetalPublicIp
+  metalRemoteCwd = $MetalRemoteCwd
+  useRunningBaseLayer = [bool]$UseRunningBaseLayer
   startedAt = (Get-Date).ToUniversalTime().ToString("o")
   repeatsData = @()
 }
@@ -791,11 +842,19 @@ try {
 
     $providerCidr = if ($Mode -eq "runner") { Get-RunnerAccessCidr -Runner $runner } else { Get-RunnerAccessCidr -Runner $null }
     $metal = $null
+    $preprovisionedMetal = $false
     try {
-      $metal = Provision-Metal -RunDir $repeatDir -ProviderCidr $providerCidr
+      if ($MetalPublicIp) {
+        $metal = Get-PreprovisionedMetal -RunDir $repeatDir
+        $preprovisionedMetal = $true
+      } else {
+        $metal = Provision-Metal -RunDir $repeatDir -ProviderCidr $providerCidr
+      }
       Wait-ForSsh -HostMeta $metal -LogDir $logDir
-      Setup-Metal -Metal $metal -LogDir $logDir
-      Start-BaseLayer -Metal $metal -LogDir $logDir
+      if (-not $UseRunningBaseLayer) {
+        Setup-Metal -Metal $metal -LogDir $logDir
+        Start-BaseLayer -Metal $metal -LogDir $logDir
+      }
       Wait-ForBaseLayer -Metal $metal -LogDir $logDir
       Wait-ForWarmPool -Metal $metal -LogDir $logDir
 
@@ -815,7 +874,7 @@ try {
       }
     } finally {
       Pull-MetalDiagnostics -Metal $metal -LogDir $logDir
-      if ($metal -and -not $KeepMetal) {
+      if ($metal -and -not $KeepMetal -and -not $preprovisionedMetal) {
         Stop-Instance -Meta $metal -Label "metal"
       }
     }

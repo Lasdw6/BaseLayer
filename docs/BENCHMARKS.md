@@ -160,7 +160,7 @@ Current self-host runner knobs:
 | `MAX_SESSIONS` | `20` | Base admission target for the single metal host. Warm-borrow logic can reuse prebuilt warm sessions above this where safe. |
 | `FIRECRACKER_MAX_MICROVM_COUNT` | `44` | Hard cap for active and warm Firecracker microVMs on the `m5zn.metal` host. |
 | `FIRECRACKER_NETWORK_POOL_SIZE` | `44` | Prepares one network slot per possible Firecracker microVM. |
-| `WARM_POOL_SIZE` | `20` | Maintains a pool of ready Chromium microVMs for BrowserArena create waves. |
+| `WARM_POOL_SIZE` | `30` | Maintains a deeper pool of ready Chromium microVMs for BrowserArena create waves. |
 | `WARM_POOL_RESERVE` | `4` | Leaves headroom for warm-pool refill and active sessions. |
 | `WARM_POOL_FILL_CONCURRENCY` | `2` | Refills the warm pool conservatively to avoid IO/restore stampedes during c10 waves. |
 | `NODE_AGENT_LAUNCH_ADMISSION_WAIT_MS` | `85000` | Applies bounded node-agent backpressure if active sessions and launch reservations briefly exceed local admission capacity. The wait is counted inside BrowserArena `session_creation_ms`. |

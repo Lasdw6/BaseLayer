@@ -2006,9 +2006,6 @@ export class FirecrackerOrchestrator {
       const browserWsPath = await this.#verifyWarmMachine(machine, {
         verifyWebSocketUpgrade: true,
       });
-      if (agentConfig.firecrackerWarmClaimSettleMs > 0) {
-        await sleep(agentConfig.firecrackerWarmClaimSettleMs);
-      }
 
       return {
         sessionId: requestedSessionId,
@@ -2077,7 +2074,6 @@ export class FirecrackerOrchestrator {
         browserWsPath,
         options.timeoutMs,
       );
-      await waitForStableDevtoolsReady(machine, browserWsPath, options.timeoutMs);
     }
     return browserWsPath;
   }

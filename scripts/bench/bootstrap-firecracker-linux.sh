@@ -80,7 +80,15 @@ if ! command -v firecracker >/dev/null 2>&1; then
   TMP_DIR=$(mktemp -d)
   trap 'rm -rf "$TMP_DIR"' EXIT
   curl -L "${RELEASE_URL}/download/${LATEST}/firecracker-${LATEST}-${ARCH}.tgz" | tar -xz -C "$TMP_DIR"
-  sudo install -m 0755 "$TMP_DIR/release-${LATEST}-${ARCH}/firecracker-${LATEST}-${ARCH}" /usr/local/bin/firecracker
+  FIRECRACKER_BIN="$(
+    find "$TMP_DIR" -type f -name "firecracker*" -perm -u+x -print -quit
+  )"
+  if [ -z "$FIRECRACKER_BIN" ]; then
+    echo "Could not find firecracker binary in release archive ${LATEST} (${ARCH})." >&2
+    find "$TMP_DIR" -maxdepth 3 -type f -print >&2
+    exit 1
+  fi
+  sudo install -m 0755 "$FIRECRACKER_BIN" /usr/local/bin/firecracker
 fi
 
 cd "$ROOT"

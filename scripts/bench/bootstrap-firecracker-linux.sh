@@ -109,7 +109,15 @@ else
   if [ "$BROWSER_PROFILE" = "chromium" ]; then
     node "$PLAYWRIGHT_CLI" install "${PLAYWRIGHT_INSTALL_ARGS[@]}" chromium
   else
-    node "$PLAYWRIGHT_CLI" install "${PLAYWRIGHT_INSTALL_ARGS[@]}" chromium-headless-shell
+    if ! node "$PLAYWRIGHT_CLI" install "${PLAYWRIGHT_INSTALL_ARGS[@]}" chromium-headless-shell; then
+      if find /root/.cache/ms-playwright "$HOME/.cache/ms-playwright" \
+        -type f \( -name chrome-headless-shell -o -name headless_shell \) \
+        -print -quit 2>/dev/null | grep -q .; then
+        echo "[bootstrap] Playwright install returned nonzero after materializing chromium-headless-shell; continuing"
+      else
+        exit 1
+      fi
+    fi
   fi
 fi
 

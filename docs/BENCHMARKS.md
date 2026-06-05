@@ -155,20 +155,20 @@ Current self-host runner knobs:
 | `CONTROL_PLANE_SCHEDULER_ADMISSION_WAIT_MS` | `30000` | Applies bounded provider-side backpressure when the host is temporarily saturated. The wait is counted inside BrowserArena `session_creation_ms`; it is not hidden from the benchmark. |
 | `CONTROL_PLANE_SCHEDULER_ADMISSION_POLL_MS` | `250` | Poll cadence while waiting for host admission capacity. |
 | `CONTROL_PLANE_HOST_DELETE_RESERVATION_TTL_MS` | `3000` | Keeps async-delete capacity reservations short while the node agent catches up. |
-| `CONTROL_PLANE_REMOTE_CREATE_TIMEOUT_MS` | `30000` | Bounds remote node-agent create calls. |
+| `CONTROL_PLANE_REMOTE_CREATE_TIMEOUT_MS` | `180000` | Gives rare drained-pool requests time to recover through warm refill instead of failing at the tail. The wait is counted inside BrowserArena `session_creation_ms`. |
 | `CONTROL_PLANE_REMOTE_CREATE_RETRIES` | `0` | Avoids doubling create-reservation hold time during host contention. Local Firecracker restore retries still happen inside the node agent. |
 | `MAX_SESSIONS` | `20` | Base admission target for the single metal host. Warm-borrow logic can reuse prebuilt warm sessions above this where safe. |
 | `FIRECRACKER_MAX_MICROVM_COUNT` | `44` | Hard cap for active and warm Firecracker microVMs on the `m5zn.metal` host. |
 | `FIRECRACKER_NETWORK_POOL_SIZE` | `44` | Prepares one network slot per possible Firecracker microVM. |
-| `WARM_POOL_SIZE` | `40` | Maintains a deeper buffer of ready Chromium microVMs for BrowserArena c10 waves. |
+| `WARM_POOL_SIZE` | `30` | Maintains a deeper pool of ready Chromium microVMs for BrowserArena create waves while leaving refill headroom under the microVM cap. |
 | `WARM_POOL_RESERVE` | `4` | Leaves headroom for warm-pool refill and active sessions. |
 | `WARM_POOL_FILL_CONCURRENCY` | `4` | Refills the warm pool conservatively to avoid the restore-stampede settings rejected during tuning. |
-| `NODE_AGENT_LAUNCH_ADMISSION_WAIT_MS` | `85000` | Applies bounded node-agent backpressure if active sessions and launch reservations briefly exceed local admission capacity. The wait is counted inside BrowserArena `session_creation_ms`. |
+| `NODE_AGENT_LAUNCH_ADMISSION_WAIT_MS` | `175000` | Applies bounded node-agent backpressure if active sessions and launch reservations briefly exceed local admission capacity. The wait is counted inside BrowserArena `session_creation_ms`. |
 | `NODE_AGENT_LAUNCH_ADMISSION_POLL_MS` | `100` | Poll cadence while the node agent waits for local launch capacity. |
 | `FIRECRACKER_LAUNCH_CONCURRENCY` | `4` | Caps concurrent warm preparation restores. |
 | `FIRECRACKER_COLD_RESTORE_CONCURRENCY` | `2` | Separates cold restore capacity from warm-pool refill capacity. |
 | `FIRECRACKER_WARM_CLAIM_TIMEOUT_MS` | `3000` | Bounds stale warm-VM claim validation. |
-| `FIRECRACKER_WARM_WAIT_MS` | `85000` | Makes a c10 create wait for warm-pool refill before falling back. The wait is counted inside BrowserArena `session_creation_ms`. |
+| `FIRECRACKER_WARM_WAIT_MS` | `175000` | Makes a c10 create wait for warm-pool refill before failing. The wait is counted inside BrowserArena `session_creation_ms`. |
 | `FIRECRACKER_WARM_FALLBACK_TO_COLD` | `0` | Keeps BrowserArena self-host runs on the warm restore path instead of letting temporary pool drain trigger cold-restore storms. |
 
 The bounded admission wait is intentionally part of the provider create path.

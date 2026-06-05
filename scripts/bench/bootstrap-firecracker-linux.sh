@@ -81,12 +81,17 @@ if ! command -v firecracker >/dev/null 2>&1; then
   trap 'rm -rf "$TMP_DIR"' EXIT
   curl -L "${RELEASE_URL}/download/${LATEST}/firecracker-${LATEST}-${ARCH}.tgz" | tar -xz -C "$TMP_DIR"
   FIRECRACKER_BIN="$(
-    find "$TMP_DIR" -type f -name "firecracker*" -perm -u+x -print -quit
+    find "$TMP_DIR" -type f -name "firecracker-${LATEST}-${ARCH}" -perm -u+x -print -quit
   )"
   if [ -z "$FIRECRACKER_BIN" ]; then
-    echo "Could not find firecracker binary in release archive ${LATEST} (${ARCH})." >&2
-    find "$TMP_DIR" -maxdepth 3 -type f -print >&2
-    exit 1
+    FIRECRACKER_BIN="$(
+      find "$TMP_DIR" -type f -name "firecracker*" ! -name "*.debug" -perm -u+x -print -quit
+    )"
+    if [ -z "$FIRECRACKER_BIN" ]; then
+      echo "Could not find firecracker binary in release archive ${LATEST} (${ARCH})." >&2
+      find "$TMP_DIR" -maxdepth 3 -type f -print >&2
+      exit 1
+    fi
   fi
   sudo install -m 0755 "$FIRECRACKER_BIN" /usr/local/bin/firecracker
 fi

@@ -365,7 +365,14 @@ function Setup-Runner {
 
     $archivePath = Join-Path $LogDir "browserarena-runner-src.tgz"
     $tarCommand = "tar --exclude=.git --exclude=node_modules --exclude=results --exclude=logs -czf `"$archivePath`" -C `"$resolvedBrowserArenaPath`" ."
-    Invoke-Logged -Label "package local BrowserArena checkout" -Command $tarCommand -TimeoutSec 300 | Out-Null
+    try {
+      Invoke-Logged -Label "package local BrowserArena checkout" -Command $tarCommand -TimeoutSec 300 | Out-Null
+    } catch {
+      if (-not (Test-Path -LiteralPath $archivePath)) {
+        throw
+      }
+      Write-Host "package local BrowserArena checkout returned nonzero after writing archive; continuing"
+    }
 
     Invoke-Ssh -HostMeta $Runner -RemoteCommand "bash -lc 'rm -rf /home/ubuntu/browserarena /home/ubuntu/browserarena-src.tgz; mkdir -p /home/ubuntu/browserarena'" -LogPath (Join-Path $LogDir "prepare-runner-upload.log") -TimeoutSec $SshTimeoutSec
     Invoke-ScpTo -HostMeta $Runner -LocalPath $archivePath -RemotePath "/home/ubuntu/browserarena-src.tgz" -LogPath (Join-Path $LogDir "upload-browserarena.log") -TimeoutSec 300

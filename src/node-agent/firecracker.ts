@@ -2005,7 +2005,6 @@ export class FirecrackerOrchestrator {
       // and the caller falls through to the next warm session or a cold restore.
       const browserWsPath = await this.#verifyWarmMachine(machine, {
         verifyWebSocketUpgrade: true,
-        verifyPageReady: true,
       });
 
       return {
@@ -2046,7 +2045,7 @@ export class FirecrackerOrchestrator {
 
   async #verifyWarmMachine(
     machine: FirecrackerMachineHandle,
-    options: { verifyWebSocketUpgrade?: boolean; verifyPageReady?: boolean } = {},
+    options: { verifyWebSocketUpgrade?: boolean } = {},
   ): Promise<string> {
     const warmClaimTimeoutMs = Math.min(
       agentConfig.firecrackerRestoreTimeoutMs,
@@ -2055,13 +2054,12 @@ export class FirecrackerOrchestrator {
     return this.#probeWarmMachine(machine, {
       timeoutMs: warmClaimTimeoutMs,
       verifyWebSocketUpgrade: options.verifyWebSocketUpgrade ?? false,
-      verifyPageReady: options.verifyPageReady ?? false,
     });
   }
 
   async #probeWarmMachine(
     machine: FirecrackerMachineHandle,
-    options: { timeoutMs: number; verifyWebSocketUpgrade: boolean; verifyPageReady?: boolean },
+    options: { timeoutMs: number; verifyWebSocketUpgrade: boolean },
   ): Promise<string> {
     const version = await waitForJson<{ webSocketDebuggerUrl: string }>(
       machine.localDebugHttpUrl(),
@@ -2076,18 +2074,6 @@ export class FirecrackerOrchestrator {
         browserWsPath,
         options.timeoutMs,
       );
-    }
-    if (options.verifyPageReady) {
-      const browser = await chromium.connectOverCDP(machine.localDebugHttpUrl(), {
-        timeout: options.timeoutMs,
-      });
-      try {
-        const context = browser.contexts()[0] ?? (await browser.newContext());
-        const page = context.pages()[0] ?? (await context.newPage());
-        await page.evaluate(() => document.readyState);
-      } finally {
-        await browser.close().catch(() => undefined);
-      }
     }
     return browserWsPath;
   }

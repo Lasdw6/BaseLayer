@@ -385,6 +385,7 @@ $metadata = [ordered]@{
 
 $metadata | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $MetadataPath -Encoding UTF8
 $metadata | ConvertTo-Json -Depth 5
+exit 0
 }
 catch {
   Remove-AwsProvisionArtifacts -KeyName $createdKeyName -SecurityGroupId $createdSecurityGroupId -KeyPath $keyPath

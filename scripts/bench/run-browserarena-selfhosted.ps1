@@ -64,33 +64,42 @@ function Invoke-Logged {
   )
 
   Write-Host "==> $Label"
-  $job = Start-Job -ScriptBlock {
-    param($cmd, $wd)
-    Set-Location $wd
-    powershell -NoProfile -ExecutionPolicy Bypass -Command $cmd
-    if ($LASTEXITCODE -ne 0) {
-      throw "child command exited with code $LASTEXITCODE"
-    }
-  } -ArgumentList $Command, $WorkDir
+  $stdoutPath = [System.IO.Path]::GetTempFileName()
+  $stderrPath = [System.IO.Path]::GetTempFileName()
+  $process = Start-Process powershell -ArgumentList @(
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-Command",
+    $Command
+  ) -WorkingDirectory $WorkDir -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -WindowStyle Hidden -PassThru
 
-  $finished = Wait-Job $job -Timeout $TimeoutSec
-  if (-not $finished) {
-    Stop-Job $job -Force | Out-Null
-    Receive-Job $job -ErrorAction SilentlyContinue | Write-Host
-    Remove-Job $job -Force | Out-Null
+  if (-not $process.WaitForExit($TimeoutSec * 1000)) {
+    try {
+      Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+    } catch {
+      # ignore cleanup races
+    }
+    Get-Content $stdoutPath -ErrorAction SilentlyContinue | Write-Host
+    Get-Content $stderrPath -ErrorAction SilentlyContinue | Write-Host
+    Remove-Item -Force -ErrorAction SilentlyContinue $stdoutPath, $stderrPath
     throw "Timed out after ${TimeoutSec}s: $Label"
   }
 
-  $output = Receive-Job $job
-  $code = $job.ChildJobs[0].JobStateInfo.State
-  Remove-Job $job -Force | Out-Null
-  if ($output) {
-    $output | Write-Host
+  $stdout = @(Get-Content $stdoutPath -ErrorAction SilentlyContinue)
+  $stderr = @(Get-Content $stderrPath -ErrorAction SilentlyContinue)
+  Remove-Item -Force -ErrorAction SilentlyContinue $stdoutPath, $stderrPath
+
+  if ($stdout.Count -gt 0) {
+    $stdout | Write-Host
   }
-  if ($code -ne "Completed") {
+  if ($stderr.Count -gt 0) {
+    $stderr | Write-Host
+  }
+  if ($process.ExitCode -ne 0) {
     throw "Command failed: $Label"
   }
-  return $output
+  return $stdout + $stderr
 }
 
 function Invoke-Ssh {

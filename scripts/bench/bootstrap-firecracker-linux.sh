@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'code=$?; echo "[bootstrap-firecracker] failed at line ${LINENO}: ${BASH_COMMAND} (exit ${code})" >&2' ERR
 
 export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 

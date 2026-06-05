@@ -91,7 +91,15 @@ FIRECRACKER_CI_VERSION=""
 if ! command -v firecracker >/dev/null 2>&1; then
   ARCH=$(uname -m)
   RELEASE_URL="https://github.com/firecracker-microvm/firecracker/releases"
-  LATEST=$(basename "$(curl -fsSLI -o /dev/null -w '%{url_effective}' "${RELEASE_URL}/latest")")
+  FIRECRACKER_RELEASE_VERSION="${FIRECRACKER_RELEASE_VERSION:-v1.15.0}"
+  if [ "$FIRECRACKER_RELEASE_VERSION" = "latest" ]; then
+    LATEST=$(basename "$(curl -fsSLI -o /dev/null -w '%{url_effective}' "${RELEASE_URL}/latest")")
+  else
+    LATEST="${FIRECRACKER_RELEASE_VERSION}"
+    if [[ "$LATEST" != v* ]]; then
+      LATEST="v${LATEST}"
+    fi
+  fi
   FIRECRACKER_CI_VERSION="$(echo "${LATEST#v}" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')"
   TMP_DIR=$(mktemp -d)
   trap 'rm -rf "$TMP_DIR"' EXIT
@@ -181,14 +189,14 @@ if [ ! -f "$ARTIFACT_DIR/vmlinux" ]; then
     if ! echo '1.0' | sort -V >/dev/null 2>&1; then
       SORT_VERSION="sort"
     fi
-    KERNEL_KEY=$(
-      curl -fsSL "https://s3.amazonaws.com/spec.ccfc.min/?prefix=firecracker-ci/${CI_TAG}/${ARCH}/vmlinux-&list-type=2" |
+    KERNEL_KEY="$(
+      (curl -fsSL "https://s3.amazonaws.com/spec.ccfc.min/?prefix=firecracker-ci/${CI_TAG}/${ARCH}/vmlinux-&list-type=2" || true) |
         grep -oE '<Key>firecracker-ci/[^<]+/vmlinux-[0-9][^<]*</Key>' |
         sed -E 's#^<Key>##; s#</Key>$##' |
         grep -v '\.config$' |
         $SORT_VERSION |
-        tail -1
-    )
+        tail -1 || true
+    )"
     echo "[bootstrap] floating guest kernel: ${KERNEL_KEY##*/} (set FIRECRACKER_KERNEL_VERSION to pin)"
   fi
   if [ -z "$KERNEL_KEY" ]; then

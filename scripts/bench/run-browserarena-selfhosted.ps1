@@ -693,6 +693,8 @@ function Stop-Instance {
   }
   Write-Host "==> terminating $Label $($Meta.instanceId)"
   aws.exe ec2 terminate-instances --profile $AwsProfile --region $Meta.region --instance-ids $Meta.instanceId --query "TerminatingInstances[0].CurrentState.Name" --output text | Write-Host
+  Write-Host "==> waiting for $Label $($Meta.instanceId) to terminate"
+  aws.exe ec2 wait instance-terminated --profile $AwsProfile --region $Meta.region --instance-ids $Meta.instanceId
 }
 
 $repoRoot = Resolve-RepoRoot

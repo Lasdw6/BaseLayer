@@ -1089,6 +1089,12 @@ export class NodeAgent {
       await sleep(Math.min(100, Math.max(1, waitDeadlineMs - Date.now())));
     }
 
+    if (!agentConfig.firecrackerWarmFallbackToCold) {
+      throw new Error(
+        `Warm Firecracker pool did not produce a ready session within ${agentConfig.firecrackerWarmWaitMs} ms.`,
+      );
+    }
+
     await this.#assertAdmission();
     const releaseLaunchGate = await this.#coldRestoreGate.acquire();
     try {

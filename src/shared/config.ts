@@ -304,6 +304,7 @@ export const agentConfig = {
   firecrackerRestoreRetries: envInt("FIRECRACKER_RESTORE_RETRIES", 1),
   firecrackerWarmClaimTimeoutMs: envInt("FIRECRACKER_WARM_CLAIM_TIMEOUT_MS", 10_000),
   firecrackerWarmWaitMs: envInt("FIRECRACKER_WARM_WAIT_MS", 0),
+  firecrackerWarmFallbackToCold: envBool("FIRECRACKER_WARM_FALLBACK_TO_COLD", true),
   firecrackerWarmKeepaliveIntervalMs: envInt("FIRECRACKER_WARM_KEEPALIVE_INTERVAL_MS", 2_000),
   firecrackerReadySettleMs: envInt("FIRECRACKER_READY_SETTLE_MS", 0),
   firecrackerBootTimeoutMs: envInt("FIRECRACKER_BOOT_TIMEOUT_MS", 60_000),

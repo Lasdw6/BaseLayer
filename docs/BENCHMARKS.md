@@ -162,13 +162,14 @@ Current self-host runner knobs:
 | `FIRECRACKER_NETWORK_POOL_SIZE` | `44` | Prepares one network slot per possible Firecracker microVM. |
 | `WARM_POOL_SIZE` | `20` | Maintains a pool of ready Chromium microVMs for BrowserArena create waves. |
 | `WARM_POOL_RESERVE` | `4` | Leaves headroom for warm-pool refill and active sessions. |
-| `WARM_POOL_FILL_CONCURRENCY` | `1` | Refills the warm pool conservatively to avoid IO/restore stampedes during c10 waves. |
-| `NODE_AGENT_LAUNCH_ADMISSION_WAIT_MS` | `30000` | Applies bounded node-agent backpressure if active sessions and launch reservations briefly exceed local admission capacity. The wait is counted inside BrowserArena `session_creation_ms`. |
+| `WARM_POOL_FILL_CONCURRENCY` | `2` | Refills the warm pool conservatively to avoid IO/restore stampedes during c10 waves. |
+| `NODE_AGENT_LAUNCH_ADMISSION_WAIT_MS` | `85000` | Applies bounded node-agent backpressure if active sessions and launch reservations briefly exceed local admission capacity. The wait is counted inside BrowserArena `session_creation_ms`. |
 | `NODE_AGENT_LAUNCH_ADMISSION_POLL_MS` | `100` | Poll cadence while the node agent waits for local launch capacity. |
 | `FIRECRACKER_LAUNCH_CONCURRENCY` | `4` | Caps concurrent warm preparation restores. |
 | `FIRECRACKER_COLD_RESTORE_CONCURRENCY` | `2` | Separates cold restore capacity from warm-pool refill capacity. |
 | `FIRECRACKER_WARM_CLAIM_TIMEOUT_MS` | `3000` | Bounds stale warm-VM claim validation. |
-| `FIRECRACKER_WARM_WAIT_MS` | `15000` | Makes a c10 create wait briefly for warm-pool refill before falling back to cold restore. The wait is counted inside BrowserArena `session_creation_ms`. |
+| `FIRECRACKER_WARM_WAIT_MS` | `85000` | Makes a c10 create wait for warm-pool refill before falling back. The wait is counted inside BrowserArena `session_creation_ms`. |
+| `FIRECRACKER_WARM_FALLBACK_TO_COLD` | `0` | Keeps BrowserArena self-host runs on the warm restore path instead of letting temporary pool drain trigger cold-restore storms. |
 
 The bounded admission wait is intentionally part of the provider create path.
 If the host is saturated, BrowserArena should see slower `session_creation_ms`,

@@ -332,15 +332,29 @@ function Provision-Metal {
   $metaPath = Join-Path $RunDir "metal.json"
   $openSsh = if ($NoOpenSshToWorld) { "" } else { "-OpenSshToWorld" }
   $cmd = "& `"$PSScriptRoot\aws-provision-baremetal.ps1`" -Profile `"$AwsProfile`" -Region `"$Region`" -InstanceType `"$MetalInstanceType`" -NamePrefix `"baselayer-browserarena-metal`" -VolumeSizeGb 100 -RunningTimeoutSec 600 -MetadataPath `"$metaPath`" $openSsh -OpenProviderPorts -ProviderAccessCidr `"$ProviderCidr`""
-  try {
-    Invoke-Logged -Label "provision metal" -Command $cmd -TimeoutSec 1200 | Out-Null
-  } catch {
-    if (-not (Test-Path -LiteralPath $metaPath)) {
+  for ($attempt = 1; $attempt -le 4; $attempt++) {
+    try {
+      Invoke-Logged -Label "provision metal" -Command $cmd -TimeoutSec 1200 | Out-Null
+      return Get-Content $metaPath | ConvertFrom-Json
+    } catch {
+      $message = $_.Exception.Message
+      if (Test-Path -LiteralPath $metaPath) {
+        Write-Host "provision metal returned nonzero after writing metadata; continuing"
+        return Get-Content $metaPath | ConvertFrom-Json
+      }
+
+      if ($message -match "VcpuLimitExceeded" -and $attempt -lt 4) {
+        $sleepSec = 900
+        Write-Host "metal provisioning hit regional vCPU quota while previous bare-metal capacity is releasing; retrying in ${sleepSec}s (attempt $attempt/4)"
+        Start-Sleep -Seconds $sleepSec
+        continue
+      }
+
       throw
     }
-    Write-Host "provision metal returned nonzero after writing metadata; continuing"
   }
-  return Get-Content $metaPath | ConvertFrom-Json
+
+  throw "Failed to provision metal."
 }
 
 function Get-RunnerAccessCidr {

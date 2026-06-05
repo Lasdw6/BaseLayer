@@ -1385,11 +1385,10 @@ export class NodeAgent {
     loadAvg1m: number;
     activeNavigationSessionCount?: number;
   }): "healthy" | "degraded" | "no-admit" | "draining" {
-    // Warm-borrow consistency: a full session count must NOT flip the host to no-admit
-    // while warm-ready VMs exist — a warm claim reuses a pre-built microVM and adds no
-    // load. Without this the scheduler's status gate (scheduler.ts: status must be
-    // healthy/degraded) rejects the host BEFORE its own warm-borrow escape can run, and
-    // c10 waves 503 even with a full warm pool. The real microVM cap below stays strict.
+    // Warm-borrow consistency: a full session count or microVM count must NOT flip
+    // the host to no-admit while warm-ready VMs exist. A warm claim reuses a
+    // pre-built microVM and adds no restore load. Without this, the scheduler's
+    // status gate rejects the host before its own warm-borrow escape can run.
     const warmReadyForBorrow =
       agentConfig.mode === "firecracker" ? this.#firecrackerWarmPoolSessionIds.length : 0;
     if (metrics.activeSessions >= agentConfig.maxSessions && warmReadyForBorrow === 0) {
@@ -1411,7 +1410,8 @@ export class NodeAgent {
         metrics.cpuUtilizationPct >= agentConfig.firecrackerCpuAdmissionPct &&
         metrics.loadAvg1m >= this.#hostCpuCount * agentConfig.firecrackerCpuAdmissionLoadRatio) ||
       (agentConfig.mode === "firecracker" &&
-        this.#firecracker.activeMicrovmCount >= agentConfig.firecrackerMaxMicrovmCount) ||
+        this.#firecracker.activeMicrovmCount >= agentConfig.firecrackerMaxMicrovmCount &&
+        warmReadyForBorrow === 0) ||
       (agentConfig.mode === "firecracker" &&
         agentConfig.firecrackerMaxConcurrentActiveNavigation > 0 &&
         (metrics.activeNavigationSessionCount ?? 0) >=

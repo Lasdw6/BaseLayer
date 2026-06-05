@@ -35,6 +35,14 @@ function emptyState(): StateFile {
 
 const STORE_LOCK_TIMEOUT_MS = 5_000;
 const STORE_LOCK_WAIT_MS = 25;
+const TERMINATED_SESSION_RETENTION = (() => {
+  const raw = process.env["CONTROL_PLANE_TERMINATED_SESSION_RETENTION"];
+  if (!raw) {
+    return 1_000;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1_000;
+})();
 
 function sleepMs(durationMs: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, durationMs);
@@ -152,6 +160,24 @@ export class ControlPlaneStore implements ControlPlaneStoreBackend {
     void deleteReservations;
 
     return hosts;
+  }
+
+  #pruneTerminatedSessions(): void {
+    if (TERMINATED_SESSION_RETENTION === 0) {
+      return;
+    }
+
+    const terminated = Object.values(this.#state.sessions)
+      .filter((session) => session.status === "terminated")
+      .sort((left, right) => {
+        const leftEndedAt = left.endedAt ?? left.createdAt;
+        const rightEndedAt = right.endedAt ?? right.createdAt;
+        return rightEndedAt.localeCompare(leftEndedAt);
+      });
+    for (const session of terminated.slice(TERMINATED_SESSION_RETENTION)) {
+      delete this.#state.sessions[session.sessionId];
+      delete this.#state.sessionEvents[session.sessionId];
+    }
   }
 
   #withWriteLock<T>(mutate: () => T): T {
@@ -439,6 +465,8 @@ export class ControlPlaneStore implements ControlPlaneStoreBackend {
         parsedIdempotency = idempotencyRecordSchema.parse(input.idempotency.record);
         this.#state.idempotencyRecords[input.idempotency.storageKey] = parsedIdempotency;
       }
+
+      this.#pruneTerminatedSessions();
 
       return {
         session: parsedSession,

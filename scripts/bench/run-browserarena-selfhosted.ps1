@@ -273,7 +273,7 @@ function Wait-ForWarmPool {
   param(
     [pscustomobject]$Metal,
     [string]$LogDir,
-    [int]$ExpectedDepth = 20,
+    [int]$ExpectedDepth = 30,
     [int]$TimeoutSec = 1200
   )
 

@@ -162,7 +162,7 @@ Current self-host runner knobs:
 | `FIRECRACKER_NETWORK_POOL_SIZE` | `44` | Prepares one network slot per possible Firecracker microVM. |
 | `WARM_POOL_SIZE` | `30` | Maintains a deeper pool of ready Chromium microVMs for BrowserArena create waves. |
 | `WARM_POOL_RESERVE` | `4` | Leaves headroom for warm-pool refill and active sessions. |
-| `WARM_POOL_FILL_CONCURRENCY` | `4` | Refills the warm pool fast enough for c10 waves while staying below the restore-stampede settings rejected during tuning. |
+| `WARM_POOL_FILL_CONCURRENCY` | `8` | Refills the warm pool fast enough for c10 waves; the agent paces this to 4 per tick above the critical floor and only uses the full value for recovery. |
 | `NODE_AGENT_LAUNCH_ADMISSION_WAIT_MS` | `85000` | Applies bounded node-agent backpressure if active sessions and launch reservations briefly exceed local admission capacity. The wait is counted inside BrowserArena `session_creation_ms`. |
 | `NODE_AGENT_LAUNCH_ADMISSION_POLL_MS` | `100` | Poll cadence while the node agent waits for local launch capacity. |
 | `FIRECRACKER_LAUNCH_CONCURRENCY` | `4` | Caps concurrent warm preparation restores. |

@@ -129,7 +129,17 @@ function Invoke-Ssh {
     "`"ubuntu@$($HostMeta.publicIp)`"",
     "`"$remoteShell`""
   ) -join " "
-  Invoke-Logged -Label "ssh $($HostMeta.publicIp)" -Command $ssh -WorkDir $root -TimeoutSec ($TimeoutSec + 20) | Out-Null
+  try {
+    Invoke-Logged -Label "ssh $($HostMeta.publicIp)" -Command $ssh -WorkDir $root -TimeoutSec ($TimeoutSec + 20) | Out-Null
+  } catch {
+    if (Test-Path -LiteralPath $json) {
+      $result = Get-Content $json | ConvertFrom-Json
+      if ($result.exitCode -eq 0) {
+        return
+      }
+    }
+    throw
+  }
 }
 
 function Invoke-ScpFrom {
@@ -159,7 +169,17 @@ function Invoke-ScpFrom {
     "`"ubuntu@$($HostMeta.publicIp):$RemotePath`"",
     "`"$LocalPath`""
   ) -join " "
-  Invoke-Logged -Label "scp $RemotePath" -Command $scp -WorkDir $root -TimeoutSec ($TimeoutSec + 20) | Out-Null
+  try {
+    Invoke-Logged -Label "scp $RemotePath" -Command $scp -WorkDir $root -TimeoutSec ($TimeoutSec + 20) | Out-Null
+  } catch {
+    if (Test-Path -LiteralPath $json) {
+      $result = Get-Content $json | ConvertFrom-Json
+      if ($result.exitCode -eq 0) {
+        return
+      }
+    }
+    throw
+  }
 }
 
 function Invoke-ScpTo {
@@ -188,7 +208,17 @@ function Invoke-ScpTo {
     "`"$LocalPath`"",
     "`"ubuntu@$($HostMeta.publicIp):$RemotePath`""
   ) -join " "
-  Invoke-Logged -Label "scp $LocalPath" -Command $scp -WorkDir $root -TimeoutSec ($TimeoutSec + 20) | Out-Null
+  try {
+    Invoke-Logged -Label "scp $LocalPath" -Command $scp -WorkDir $root -TimeoutSec ($TimeoutSec + 20) | Out-Null
+  } catch {
+    if (Test-Path -LiteralPath $json) {
+      $result = Get-Content $json | ConvertFrom-Json
+      if ($result.exitCode -eq 0) {
+        return
+      }
+    }
+    throw
+  }
 }
 
 function Wait-ForSsh {

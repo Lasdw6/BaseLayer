@@ -103,6 +103,8 @@ function Invoke-Ssh {
 
   $root = Resolve-RepoRoot
   $json = [System.IO.Path]::ChangeExtension($LogPath, ".json")
+  $encodedRemoteCommand = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($RemoteCommand))
+  $remoteShell = "printf %s $encodedRemoteCommand | base64 -d | bash"
   $ssh = @(
     "node scripts/ssh-run.mjs",
     "--timeout-sec=$TimeoutSec",
@@ -116,7 +118,7 @@ function Invoke-Ssh {
     "-o IdentitiesOnly=yes",
     "-i `"$($HostMeta.keyPath)`"",
     "`"ubuntu@$($HostMeta.publicIp)`"",
-    "`"$RemoteCommand`""
+    "`"$remoteShell`""
   ) -join " "
   Invoke-Logged -Label "ssh $($HostMeta.publicIp)" -Command $ssh -WorkDir $root -TimeoutSec ($TimeoutSec + 20) | Out-Null
 }

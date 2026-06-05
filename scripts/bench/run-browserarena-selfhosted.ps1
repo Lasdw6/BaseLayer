@@ -510,6 +510,7 @@ nohup sudo -E env \
   FIRECRACKER_LAUNCH_CONCURRENCY=4 \
   FIRECRACKER_COLD_RESTORE_CONCURRENCY=2 \
   FIRECRACKER_WARM_CLAIM_TIMEOUT_MS=3000 \
+  FIRECRACKER_WARM_WAIT_MS=5000 \
   BASELAYER_SUPPORTED_RUNTIME_PROFILES="$RuntimeProfile" \
   BASELAYER_RESET_STATE_ON_START=1 \
   BASELAYER_DISABLE_IRQBALANCE=1 \
@@ -586,6 +587,39 @@ function Pull-RunnerArtifacts {
     $remote = "/home/ubuntu/browserarena/results/hello-browser/baselayer/$date/c$c/results.jsonl"
     $local = Join-Path $ArtifactDir "c$c-results.jsonl"
     Invoke-ScpFrom -HostMeta $Runner -RemotePath $remote -LocalPath $local -LogPath (Join-Path $LogDir "pull-c$c.log") -TimeoutSec 180
+  }
+}
+
+function Pull-MetalDiagnostics {
+  param(
+    [pscustomobject]$Metal,
+    [string]$LogDir
+  )
+
+  if (-not $Metal) {
+    return
+  }
+
+  $diagDir = Join-Path $LogDir "metal-diagnostics"
+  New-Item -ItemType Directory -Force -Path $diagDir | Out-Null
+
+  $remote = @'
+bash -lc 'set +e
+cd /home/ubuntu/baselayer 2>/dev/null || exit 0
+mkdir -p /tmp/baselayer-selfhosted-diagnostics
+cp /home/ubuntu/baselayer/baselayer-selfhosted.log /tmp/baselayer-selfhosted-diagnostics/baselayer-selfhosted.log 2>/dev/null || true
+cp /home/ubuntu/baselayer/data/state.json /tmp/baselayer-selfhosted-diagnostics/state.json 2>/dev/null || true
+curl -fsS http://127.0.0.1:3000/health > /tmp/baselayer-selfhosted-diagnostics/control-plane-health.json 2>/dev/null || true
+curl -fsS http://127.0.0.1:4000/health > /tmp/baselayer-selfhosted-diagnostics/node-agent-health.json 2>/dev/null || true
+tar -C /tmp -czf /tmp/baselayer-selfhosted-diagnostics.tgz baselayer-selfhosted-diagnostics
+'
+'@
+
+  try {
+    Invoke-Ssh -HostMeta $Metal -RemoteCommand $remote -LogPath (Join-Path $LogDir "collect-metal-diagnostics.log") -TimeoutSec 30
+    Invoke-ScpFrom -HostMeta $Metal -RemotePath "/tmp/baselayer-selfhosted-diagnostics.tgz" -LocalPath (Join-Path $diagDir "baselayer-selfhosted-diagnostics.tgz") -LogPath (Join-Path $LogDir "pull-metal-diagnostics.log") -TimeoutSec 120
+  } catch {
+    Write-Warning "Could not pull metal diagnostics: $($_.Exception.Message)"
   }
 }
 
@@ -718,6 +752,7 @@ try {
         artifacts = $artifactDir
       }
     } finally {
+      Pull-MetalDiagnostics -Metal $metal -LogDir $logDir
       if ($metal -and -not $KeepMetal) {
         Stop-Instance -Meta $metal -Label "metal"
       }

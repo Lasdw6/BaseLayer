@@ -1044,25 +1044,49 @@ export class NodeAgent {
     sessionId: string,
     runtimeProfile: string,
   ): Promise<RuntimeLaunchResult> {
-    while (this.#firecrackerWarmPoolSessionIds.length > 0) {
-      const warmSessionId = this.#firecrackerWarmPoolSessionIds.shift();
-      if (!warmSessionId) {
+    const waitDeadlineMs =
+      agentConfig.firecrackerWarmWaitMs > 0
+        ? Date.now() + agentConfig.firecrackerWarmWaitMs
+        : 0;
+    let promptedWarmRefill = false;
+
+    while (true) {
+      while (this.#firecrackerWarmPoolSessionIds.length > 0) {
+        const warmSessionId = this.#firecrackerWarmPoolSessionIds.shift();
+        if (!warmSessionId) {
+          break;
+        }
+
+        try {
+          const claimed = await this.#firecracker.claimWarmSession(warmSessionId, sessionId);
+          if (claimed) {
+            this.#scheduleWarmPoolMaintenance();
+            return claimed;
+          }
+        } catch (error) {
+          logError("node-agent", "warm-firecracker-claim-failed", error, {
+            warmSessionId,
+            requestedSessionId: sessionId,
+            runtimeProfile,
+          });
+        }
+      }
+
+      if (waitDeadlineMs <= 0 || Date.now() >= waitDeadlineMs) {
         break;
       }
 
-      try {
-        const claimed = await this.#firecracker.claimWarmSession(warmSessionId, sessionId);
-        if (claimed) {
-          this.#scheduleWarmPoolMaintenance();
-          return claimed;
-        }
-      } catch (error) {
-        logError("node-agent", "warm-firecracker-claim-failed", error, {
-          warmSessionId,
+      if (!promptedWarmRefill) {
+        promptedWarmRefill = true;
+        this.#scheduleWarmPoolMaintenance();
+        log("node-agent", "warm-firecracker-waiting-for-refill", {
           requestedSessionId: sessionId,
           runtimeProfile,
+          waitMs: agentConfig.firecrackerWarmWaitMs,
         });
       }
+
+      await sleep(Math.min(100, Math.max(1, waitDeadlineMs - Date.now())));
     }
 
     await this.#assertAdmission();

@@ -166,11 +166,15 @@ Current self-host runner knobs:
 | `FIRECRACKER_LAUNCH_CONCURRENCY` | `4` | Caps concurrent warm preparation restores. |
 | `FIRECRACKER_COLD_RESTORE_CONCURRENCY` | `2` | Separates cold restore capacity from warm-pool refill capacity. |
 | `FIRECRACKER_WARM_CLAIM_TIMEOUT_MS` | `3000` | Bounds stale warm-VM claim validation. |
+| `FIRECRACKER_WARM_WAIT_MS` | `5000` | Makes a c10 create wait briefly for warm-pool refill before falling back to cold restore. The wait is counted inside BrowserArena `session_creation_ms`. |
 
 The bounded admission wait is intentionally part of the provider create path.
 If the host is saturated, BrowserArena should see slower `session_creation_ms`,
 not a fast `503` that makes the run fail. A run is not considered clean unless
 the artifacts show the expected success count for each concurrency level.
+Metal-side diagnostics are pulled before teardown on both passing and failing
+runs so setup or benchmark failures leave provider logs next to the BrowserArena
+artifacts.
 
 Recommended provider settings for the May 2026 `example.com` runs:
 

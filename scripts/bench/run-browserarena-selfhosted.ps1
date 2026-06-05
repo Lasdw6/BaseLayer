@@ -438,7 +438,45 @@ rm -rf /home/ubuntu/browserarena
 git clone --depth 1 --branch "$BrowserArenaRef" "$BrowserArenaRepo" /home/ubuntu/browserarena
 cd /home/ubuntu/browserarena
 npm ci
-test -f src/providers/baselayer.ts || { echo "BrowserArena checkout does not include src/providers/baselayer.ts. Pass -BrowserArenaRepo/-BrowserArenaRef for a branch with the BaseLayer provider."; exit 20; }
+if [ ! -f src/providers/baselayer.ts ]; then
+  rm -rf /tmp/baselayer-browserarena-provider
+  git clone --depth 1 --branch "$BaseLayerRef" "$BaseLayerRepo" /tmp/baselayer-browserarena-provider
+  cp /tmp/baselayer-browserarena-provider/scripts/bench/browserarena-provider/baselayer.ts src/providers/baselayer.ts
+  node <<NODE
+const fs = require("fs");
+
+function replaceOnce(path, search, replacement) {
+  const before = fs.readFileSync(path, "utf8");
+  if (before.includes(replacement)) return;
+  if (!before.includes(search)) {
+    throw new Error("Could not patch " + path + ": missing needle");
+  }
+  fs.writeFileSync(path, before.replace(search, replacement));
+}
+
+replaceOnce(
+  "src/providers/index.ts",
+  "import { BrowserUseProvider } from \"./browser-use.js\";",
+  "import { BrowserUseProvider } from \"./browser-use.js\";\nimport { BaseLayerProvider } from \"./baselayer.js\";",
+);
+replaceOnce(
+  "src/providers/index.ts",
+  "  if (key === \"browser-use\" || key === \"browseruse\" || key === \"bu\")\n    return [\"BROWSER_USE_API_KEY\"];",
+  "  if (key === \"browser-use\" || key === \"browseruse\" || key === \"bu\")\n    return [\"BROWSER_USE_API_KEY\"];\n  if (key === \"baselayer\" || key === \"base-layer\") return [\"BASELAYER_API_URL\"];",
+);
+replaceOnce(
+  "src/providers/index.ts",
+  "  if (key === \"browser-use\" || key === \"browseruse\" || key === \"bu\")\n    return new BrowserUseProvider();",
+  "  if (key === \"browser-use\" || key === \"browseruse\" || key === \"bu\")\n    return new BrowserUseProvider();\n  if (key === \"baselayer\" || key === \"base-layer\") return new BaseLayerProvider();",
+);
+replaceOnce(
+  "src/types.ts",
+  "  | \"BROWSER_USE\";",
+  "  | \"BROWSER_USE\"\n  | \"BASELAYER\";",
+);
+NODE
+fi
+test -f src/providers/baselayer.ts || { echo "BrowserArena checkout does not include src/providers/baselayer.ts and patching failed."; exit 20; }
 '
 "@
   Invoke-Ssh -HostMeta $Runner -RemoteCommand $remote -LogPath (Join-Path $LogDir "setup-runner.log") -TimeoutSec $SetupTimeoutSec

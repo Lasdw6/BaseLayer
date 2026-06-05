@@ -113,7 +113,7 @@ function Invoke-Ssh {
   $root = Resolve-RepoRoot
   $json = [System.IO.Path]::ChangeExtension($LogPath, ".json")
   $encodedRemoteCommand = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($RemoteCommand))
-  $remoteShell = "printf %s $encodedRemoteCommand | base64 -d | bash"
+  $remoteShell = "printf %s $encodedRemoteCommand ``| base64 -d ``| bash"
   $ssh = @(
     "node scripts/ssh-run.mjs",
     "--timeout-sec=$TimeoutSec",

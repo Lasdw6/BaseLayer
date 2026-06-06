@@ -51,6 +51,12 @@ readiness, runs BrowserArena, pulls artifacts, and tears down resources. See
 [`docs/BENCHMARKS.md`](./docs/BENCHMARKS.md#one-shot-self-hosted-browserarena-runner)
 for the exact command and benchmark knobs.
 
+The current self-host runner path was revalidated on 2026-06-06 with
+`https://example.com`, `c1 x100`, and `c10 x100`. Three fresh-metal repeats were
+clean for both c1 and c10. Immediate back-to-back same-host repeats kept c1
+stable and kept c10 p50 in range, but the third c10 repeat reached `98/100`, so
+same-host density reruns should still be treated as reliability stress tests.
+
 See [`docs/browserarena-results.md`](./docs/browserarena-results.md) for the
 replication notes and caveats.
 
@@ -154,7 +160,7 @@ export BASELAYER_API_URL="http://<provider-host>:3000/v1"
 export BASELAYER_RUNTIME_PROFILE="baselayer-firecracker-headless-shell"
 export BENCH_RUNS=100
 export BENCH_CONCURRENCY=1
-export BENCH_BROWSERARENA_PAGE_URL="http://example.com/"
+export BENCH_BROWSERARENA_PAGE_URL="https://example.com/"
 export BENCH_PAGE_GOTO_WAIT_UNTIL="domcontentloaded"
 export BENCH_CONNECT_RETRY_BUDGET_MS=15000
 export BENCH_OUT="$PWD/data/benchmarks/provider-api-100.json"
@@ -192,7 +198,7 @@ lifecycle against a self-hosted BaseLayer provider endpoint. Use the same
 topology when comparing numbers:
 
 - runner and provider in the same AWS region
-- target: `example.com` for current BrowserArena methodology, or Google only
+- target: `https://example.com` for current BrowserArena methodology, or Google only
   when reproducing the historical snapshot above
 - wait condition: `domcontentloaded`
 - runs: `100`

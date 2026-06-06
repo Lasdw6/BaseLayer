@@ -114,14 +114,17 @@ health and warm-pool readiness, runs BrowserArena from the `t3.micro`, pulls
 artifacts, writes `summary.json`, and tears down resources unless keep flags are
 provided.
 
+Local prerequisites for `runner` mode are checked before AWS resources are
+created: Node.js, OpenSSH `ssh`/`scp`, AWS CLI v2, and a usable non-default AWS
+profile. Remote hosts install their Linux dependencies during bootstrap.
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\bench\run-browserarena-selfhosted.ps1 `
   -Mode runner `
   -Region us-west-2 `
   -Repeats 1 `
   -BaseLayerRepo https://github.com/Lasdw6/BaseLayer.git `
-  -BaseLayerRef browserarena-update `
-  -BrowserArenaPath C:\path\to\browserarena-with-baselayer-provider `
+  -BaseLayerRef main `
   -Target https://example.com `
   -Concurrency 1,10 `
   -Runs 100 `
@@ -135,8 +138,7 @@ npm run bench:browserarena:selfhosted -- -- \
   --mode runner \
   --region us-west-2 \
   --baselayer-repo https://github.com/Lasdw6/BaseLayer.git \
-  --baselayer-ref browserarena-update \
-  --browserarena-path ../browserarena-with-baselayer-provider \
+  --baselayer-ref main \
   --target https://example.com \
   --concurrency 1,10 \
   --runs 100
@@ -180,6 +182,25 @@ npm run bench:browserarena:selfhosted -- -- \
 For `c10`, BrowserArena runs 100 waves of 10 parallel sessions, or 1000 session
 attempts total.
 
+June 6, 2026 HTTPS self-host runner validation:
+
+| Mode | c1 result | c10 result | Notes |
+| --- | ---: | ---: | --- |
+| Fresh metal repeat 1 | `100/100`, `249 ms` | `100/100`, `618 ms` | New `t3.micro` runner + new `m5zn.metal` host. |
+| Fresh metal repeat 2 | `100/100`, `196.5 ms` | `100/100`, `535.5 ms` | New `t3.micro` runner + new `m5zn.metal` host. |
+| Fresh metal repeat 3 | `100/100`, `197 ms` | `100/100`, `558 ms` | New `t3.micro` runner + new `m5zn.metal` host. |
+| Same metal setup run | `100/100`, `197.5 ms` | `100/100`, `651.5 ms` | Host kept after setup. |
+| Same metal repeat 1 | `100/100`, `198.5 ms` | `100/100`, `636.5 ms` | `--use-running-baselayer`. |
+| Same metal repeat 2 | `100/100`, `199.5 ms` | `100/100`, `612 ms` | `--use-running-baselayer`. |
+| Same metal repeat 3 | `100/100`, `202 ms` | `98/100`, `553 ms` | Immediate back-to-back run exposed a c10 reliability tail. |
+
+These validation rows use `https://example.com`, `c1 x100`, and `c10 x100`.
+Lifecycle p50 is the sum of the p50 values for BrowserArena's create, connect,
+goto, and release stages. Fresh-metal c1/c10 was clean across all three repeats.
+Back-to-back same-host c10 did not show p50 drift, but the third immediate repeat
+had two failures; leave spacing between repeated density runs or treat repeated
+same-host c10 as a reliability stress test.
+
 Current self-host runner knobs:
 
 | Setting | Value | Why it exists |
@@ -214,7 +235,12 @@ Metal-side diagnostics are pulled before teardown on both passing and failing
 runs so setup or benchmark failures leave provider logs next to the BrowserArena
 artifacts.
 
-Recommended provider settings for the May 2026 `example.com` runs:
+Legacy/manual provider-harness settings for older May 2026 `example.com` runs:
+
+These apply to the lower-level `bench:provider-api` harness when you start the
+API and node agent yourself. They are not the recommended settings for the
+one-shot self-host BrowserArena runner above; that path sets its own validated
+knobs in `scripts/bench/run-browserarena-selfhosted.ps1`.
 
 ```bash
 export CONTROL_PLANE_ASYNC_SESSION_DELETE=1

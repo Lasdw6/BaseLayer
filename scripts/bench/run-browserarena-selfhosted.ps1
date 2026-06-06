@@ -56,6 +56,46 @@ function Resolve-RepoRoot {
   return (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 }
 
+function Assert-Command {
+  param(
+    [string]$Name,
+    [string]$InstallHint
+  )
+
+  if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
+    throw "Missing required command '$Name'. $InstallHint"
+  }
+}
+
+function Test-Dependencies {
+  Assert-Command -Name "node" -InstallHint "Install Node.js 22+ and retry."
+  Assert-Command -Name "ssh" -InstallHint "Install OpenSSH client and retry."
+  Assert-Command -Name "scp" -InstallHint "Install OpenSSH client and retry."
+
+  $needsAws = -not (
+    ($Mode -eq "runner" -and $ReuseRunner -and $RunnerMetadataPath -and $MetalPublicIp -and $MetalSshKeyPath) -or
+    ($Mode -eq "local" -and $MetalPublicIp -and $MetalSshKeyPath)
+  )
+  if ($needsAws) {
+    Assert-Command -Name "aws" -InstallHint "Install AWS CLI v2, configure a dedicated profile, and retry."
+    if ($AwsProfile -eq "default") {
+      throw "Refusing to use the default AWS profile. Pass -AwsProfile with a dedicated profile such as 'baselayer'."
+    }
+    try {
+      aws sts get-caller-identity --profile $AwsProfile --output json --cli-connect-timeout 10 --cli-read-timeout 20 | Out-Null
+    } catch {
+      throw "AWS profile '$AwsProfile' is not usable. Run 'aws sts get-caller-identity --profile $AwsProfile' and retry."
+    }
+  }
+
+  if ($Mode -eq "local") {
+    Assert-Command -Name "npm" -InstallHint "Install npm with Node.js 22+ and retry."
+    if (-not $BrowserArenaPath) {
+      throw "Mode=local requires -BrowserArenaPath pointing to a BrowserArena checkout with src/providers/baselayer.ts."
+    }
+  }
+}
+
 function New-RunDirectory {
   param([string]$Root)
   $stamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
@@ -801,6 +841,7 @@ function Stop-Instance {
 }
 
 $repoRoot = Resolve-RepoRoot
+Test-Dependencies
 $runRoot = New-RunDirectory -Root (Join-Path $repoRoot $OutDir)
 $manifest = [ordered]@{
   mode = $Mode

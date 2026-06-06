@@ -243,7 +243,7 @@ export class NodeAgent {
   readonly #coldRestoreGate = new AsyncGate(agentConfig.firecrackerColdRestoreConcurrency);
   // Warm claims are FIFO so older waiters get the next refilled VM instead of
   // being starved by newer creates polling the shared warm pool.
-  readonly #firecrackerWarmClaimGate = new AsyncGate(1);
+  readonly #firecrackerWarmClaimGate = new AsyncGate(agentConfig.firecrackerWarmClaimConcurrency);
 
   readonly #crashEvents: number[] = [];
 

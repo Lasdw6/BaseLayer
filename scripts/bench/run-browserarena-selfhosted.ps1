@@ -17,7 +17,7 @@ param(
   [string]$Concurrency = "1,10",
   [int]$Runs = 100,
   [int]$Repeats = 1,
-  [string]$RuntimeProfile = "BaseLayer-Mew-firecracker-headless-shell",
+  [string]$RuntimeProfile = "baselayer-firecracker-headless-shell",
 
   [string]$RunnerMetadataPath = "",
   [string]$MetalPublicIp = "",

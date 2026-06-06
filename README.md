@@ -17,7 +17,7 @@ These are **self-hosted** BrowserArena-methodology runs.
 ### Latest Methodology Snapshot
 
 BrowserArena changed its default fairness URL to `example.com` on 2026-05-05.
-Using that current target, BaseLayer's latest conservative sequential
+Using that current target, BaseLayer's latest sequential
 self-hosted snapshot was measured on 2026-06-01. The competitor positioning referenced in
 [`docs/browserarena-results.md`](./docs/browserarena-results.md) uses
 BrowserArena c1 leaderboard numbers checked on 2026-06-01.
@@ -31,7 +31,7 @@ not the headline comparison number.
 
 | Runtime / profile | Run date | Topology | Runs | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `baselayer-firecracker-headless-shell` | 2026-06-01 | AWS `t3.micro` runner -> AWS `m5zn.metal` host, `us-east-2`, BrowserArena stages, `http://example.com`, `c1 x100`, slowest clean run from 5 repeats | 100 | `100/100` | `74.8 ms` | `54.4 ms` | `82.6 ms` | `11.8 ms` | `223.6 ms` |
+| `baselayer-firecracker-headless-shell` | 2026-06-01 | AWS `t3.micro` runner -> AWS `m5zn.metal` host, `us-east-2`, BrowserArena stages, `example.com` target, `c1 x100`, slowest clean run from 5 repeats | 100 | `100/100` | `74.8 ms` | `54.4 ms` | `82.6 ms` | `11.8 ms` | `223.6 ms` |
 
 These are **self-hosted, sequential** benchmark results from five `c1 x100`
 runs on 2026-06-01. The public headline uses the slowest clean `100/100` run

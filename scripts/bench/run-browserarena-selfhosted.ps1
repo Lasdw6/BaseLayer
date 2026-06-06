@@ -547,6 +547,7 @@ function Setup-Metal {
   )
 
   $remoteCwd = if ($Metal.remoteCwd) { $Metal.remoteCwd } else { $MetalRemoteCwd }
+  $remoteUser = if ($Metal.loginUser) { $Metal.loginUser } else { $MetalSshUser }
   $clone = @"
 bash -lc 'set -euo pipefail
 apt_update_retry() {
@@ -563,10 +564,11 @@ apt_update_retry() {
 }
 apt_update_retry
 sudo apt-get install -y git ca-certificates curl
-rm -rf "$remoteCwd"
-mkdir -p "`$(dirname "$remoteCwd")"
+sudo rm -rf "$remoteCwd"
+sudo mkdir -p "`$(dirname "$remoteCwd")"
+sudo chown "${remoteUser}:${remoteUser}" "`$(dirname "$remoteCwd")"
 git clone --depth 1 --branch "$BaseLayerRef" "$BaseLayerRepo" "$remoteCwd"
-sudo chown -R ubuntu:ubuntu "$remoteCwd"
+sudo chown -R "${remoteUser}:${remoteUser}" "$remoteCwd"
 '
 "@
   Invoke-Ssh -HostMeta $Metal -RemoteCommand $clone -LogPath (Join-Path $LogDir "clone-baselayer.log") -TimeoutSec 900

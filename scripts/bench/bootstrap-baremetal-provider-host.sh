@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'code=$?; echo "[bootstrap-provider-host] failed at line ${LINENO}: ${BASH_COMMAND} (exit ${code})" >&2' ERR
 
 ROOT="${1:-$(cd "$(dirname "$0")/../.." && pwd)}"
 TARGET_USER="${SUDO_USER:-${USER:-ubuntu}}"

@@ -62,16 +62,35 @@ This is a latency-positioning comparison, not an official leaderboard claim.
 ## Latest Concurrent Validation
 
 The current public headline is the conservative sequential run above. The
-concurrent `c10 x10` path remains under review while the scheduler and live-demo
-harness are being hardened.
+concurrent path is reported as validation data, not as the headline result.
 
-The most recent published concurrent validation was run on 2026-05-23. It used
-`BENCH_RUNS=10` and `BENCH_CONCURRENCY=10`, which produces 10 waves of 10
-sessions, or 100 measured sessions total.
+The June 6, 2026 validation used the self-host BrowserArena runner against
+`https://example.com`. Each `c10 x100` row is 100 waves of 10 parallel sessions,
+or 1000 session attempts total.
 
-| Run | Run date | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `wsfirst-wsprobe-c10x10` | 2026-05-23 | `100/100` | `396.1 ms` | `39.6 ms` | `144.8 ms` | `50.0 ms` | `651.7 ms` |
+| Run | Run date | Shape | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Fresh metal repeat 1 | 2026-06-06 | `c10 x100` | `100/100` | `352 ms` | `70.5 ms` | `177.5 ms` | `18 ms` | `618 ms` |
+| Fresh metal repeat 2 | 2026-06-06 | `c10 x100` | `100/100` | `161.5 ms` | `74.5 ms` | `266 ms` | `33.5 ms` | `535.5 ms` |
+| Fresh metal repeat 3 | 2026-06-06 | `c10 x100` | `100/100` | `185.5 ms` | `78.5 ms` | `263 ms` | `31 ms` | `558 ms` |
+| Same metal setup run | 2026-06-06 | `c10 x100` | `100/100` | `379.5 ms` | `71 ms` | `181 ms` | `20 ms` | `651.5 ms` |
+| Same metal repeat 1 | 2026-06-06 | `c10 x100` | `100/100` | `145.5 ms` | `110 ms` | `333.5 ms` | `47.5 ms` | `636.5 ms` |
+| Same metal repeat 2 | 2026-06-06 | `c10 x100` | `100/100` | `174.5 ms` | `107 ms` | `286.5 ms` | `44 ms` | `612 ms` |
+| Same metal repeat 3 | 2026-06-06 | `c10 x100` | `98/100` | `166 ms` | `96 ms` | `259.5 ms` | `31.5 ms` | `553 ms` |
+
+The three fresh-metal repeats provisioned a new `t3.micro` runner and a new
+`m5zn.metal` host each time. The same-metal rows reused an already-running
+BaseLayer host with `--use-running-baselayer`. c10 p50 stayed in range during
+back-to-back same-host repeats, but the third immediate repeat exposed a
+reliability tail with two failures, so repeated same-host c10 should be treated
+as a stress path rather than the normal daily-run shape.
+
+The previous c10 validation from 2026-05-23 used `BENCH_RUNS=10` and
+`BENCH_CONCURRENCY=10`, which produced 10 waves of 10 sessions:
+
+| Run | Run date | Shape | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `wsfirst-wsprobe-c10x10` | 2026-05-23 | `c10 x10` | `100/100` | `396.1 ms` | `39.6 ms` | `144.8 ms` | `50.0 ms` | `651.7 ms` |
 
 ## Historical Google-Target Snapshot
 
@@ -111,7 +130,7 @@ export CONTROL_PLANE_ASYNC_SESSION_DELETE=1
 export CONTROL_PLANE_ASYNC_SESSION_DELETE_DELAY_MS=120000
 export BENCH_RUNS=100
 export BENCH_CONCURRENCY=1
-export BENCH_BROWSERARENA_PAGE_URL="http://example.com/"
+export BENCH_BROWSERARENA_PAGE_URL="https://example.com/"
 export BENCH_PAGE_GOTO_WAIT_UNTIL="domcontentloaded"
 export BENCH_CONNECT_RETRY_BUDGET_MS=15000
 export BENCH_OUT="$PWD/data/benchmarks/provider-api-example-c1x100.json"

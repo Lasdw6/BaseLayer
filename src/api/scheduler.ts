@@ -83,7 +83,12 @@ export function chooseHost(hosts: HostRecord[], options: HostSelectionOptions = 
       return false;
     }
 
-    if (host.metrics.activeSessions >= host.capacity.maxSessions) {
+    // Mirror the microVM-cap escape below (line ~118): a warm-borrow claims a
+    // pre-built runtime and adds no new restore load, so a full session count must
+    // not reject admission when the host still has warm-ready capacity. Without this
+    // escape, concurrent c10 create reservations stack activeSessions to maxSessions
+    // mid-wave and the scheduler 503s ("No host eligible") even though warm VMs exist.
+    if (host.metrics.activeSessions >= host.capacity.maxSessions && !canBorrowWarm) {
       return false;
     }
 

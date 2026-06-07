@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'code=$?; echo "[bootstrap-firecracker] failed at line ${LINENO}: ${BASH_COMMAND} (exit ${code})" >&2' ERR
 
 export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
 
 ROOT="${1:-$PWD}"
 ARTIFACT_DIR="${FIRECRACKER_ARTIFACT_DIR:-$ROOT/artifacts/firecracker}"
 
-sudo apt-get update
+apt_update_retry() {
+  local attempt
+  for attempt in 1 2 3; do
+    if sudo apt-get update; then
+      return 0
+    fi
+    sudo rm -rf /var/lib/apt/lists/*
+    sudo mkdir -p /var/lib/apt/lists/partial
+    sleep $((attempt * 5))
+  done
+  sudo apt-get update
+}
+
+apt_update_retry
 sudo apt-get install -y \
   acl \
   bridge-utils \
@@ -73,14 +87,37 @@ EOF
 
 grant_kvm_access
 
+FIRECRACKER_CI_VERSION=""
 if ! command -v firecracker >/dev/null 2>&1; then
   ARCH=$(uname -m)
   RELEASE_URL="https://github.com/firecracker-microvm/firecracker/releases"
-  LATEST=$(basename "$(curl -fsSLI -o /dev/null -w '%{url_effective}' "${RELEASE_URL}/latest")")
+  FIRECRACKER_RELEASE_VERSION="${FIRECRACKER_RELEASE_VERSION:-v1.15.0}"
+  if [ "$FIRECRACKER_RELEASE_VERSION" = "latest" ]; then
+    LATEST=$(basename "$(curl -fsSLI -o /dev/null -w '%{url_effective}' "${RELEASE_URL}/latest")")
+  else
+    LATEST="${FIRECRACKER_RELEASE_VERSION}"
+    if [[ "$LATEST" != v* ]]; then
+      LATEST="v${LATEST}"
+    fi
+  fi
+  FIRECRACKER_CI_VERSION="$(echo "${LATEST#v}" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')"
   TMP_DIR=$(mktemp -d)
   trap 'rm -rf "$TMP_DIR"' EXIT
   curl -L "${RELEASE_URL}/download/${LATEST}/firecracker-${LATEST}-${ARCH}.tgz" | tar -xz -C "$TMP_DIR"
-  sudo install -m 0755 "$TMP_DIR/release-${LATEST}-${ARCH}/firecracker-${LATEST}-${ARCH}" /usr/local/bin/firecracker
+  FIRECRACKER_BIN="$(
+    find "$TMP_DIR" -type f -name "firecracker-${LATEST}-${ARCH}" -perm -u+x -print -quit
+  )"
+  if [ -z "$FIRECRACKER_BIN" ]; then
+    FIRECRACKER_BIN="$(
+      find "$TMP_DIR" -type f -name "firecracker*" ! -name "*.debug" -perm -u+x -print -quit
+    )"
+    if [ -z "$FIRECRACKER_BIN" ]; then
+      echo "Could not find firecracker binary in release archive ${LATEST} (${ARCH})." >&2
+      find "$TMP_DIR" -maxdepth 3 -type f -print >&2
+      exit 1
+    fi
+  fi
+  sudo install -m 0755 "$FIRECRACKER_BIN" /usr/local/bin/firecracker
 fi
 
 cd "$ROOT"
@@ -109,7 +146,15 @@ else
   if [ "$BROWSER_PROFILE" = "chromium" ]; then
     node "$PLAYWRIGHT_CLI" install "${PLAYWRIGHT_INSTALL_ARGS[@]}" chromium
   else
-    node "$PLAYWRIGHT_CLI" install "${PLAYWRIGHT_INSTALL_ARGS[@]}" chromium-headless-shell
+    if ! node "$PLAYWRIGHT_CLI" install "${PLAYWRIGHT_INSTALL_ARGS[@]}" chromium-headless-shell; then
+      if { find /root/.cache/ms-playwright "$HOME/.cache/ms-playwright" \
+        \( -type f \( -name chrome-headless-shell -o -name headless_shell \) -o -type d -name 'chromium_headless_shell-*' \) \
+        -print -quit 2>/dev/null || true; } | grep -q .; then
+        echo "[bootstrap] Playwright install returned nonzero after materializing chromium-headless-shell; continuing"
+      else
+        exit 1
+      fi
+    fi
   fi
 fi
 
@@ -121,10 +166,13 @@ if [ ! -f "$ARTIFACT_DIR/vmlinux" ]; then
   # comparisons.
   KERNEL_VERSION="${FIRECRACKER_KERNEL_VERSION:-}"
   CI_VERSION=$(
-    firecracker --version 2>/dev/null |
+    (firecracker --version 2>/dev/null || true) |
       head -n 1 |
-      sed -E 's/^Firecracker v([0-9]+\.[0-9]+).*/\1/'
+      sed -E 's/^Firecracker v([0-9]+\.[0-9]+).*/\1/' || true
   )
+  if [ -z "$CI_VERSION" ] && [ -n "$FIRECRACKER_CI_VERSION" ]; then
+    CI_VERSION="$FIRECRACKER_CI_VERSION"
+  fi
   if [ -z "$CI_VERSION" ]; then
     echo "Could not parse Firecracker version for kernel download." >&2
     exit 1
@@ -141,14 +189,14 @@ if [ ! -f "$ARTIFACT_DIR/vmlinux" ]; then
     if ! echo '1.0' | sort -V >/dev/null 2>&1; then
       SORT_VERSION="sort"
     fi
-    KERNEL_KEY=$(
-      curl -fsSL "https://s3.amazonaws.com/spec.ccfc.min/?prefix=firecracker-ci/${CI_TAG}/${ARCH}/vmlinux-&list-type=2" |
+    KERNEL_KEY="$(
+      (curl -fsSL "https://s3.amazonaws.com/spec.ccfc.min/?prefix=firecracker-ci/${CI_TAG}/${ARCH}/vmlinux-&list-type=2" || true) |
         grep -oE '<Key>firecracker-ci/[^<]+/vmlinux-[0-9][^<]*</Key>' |
         sed -E 's#^<Key>##; s#</Key>$##' |
         grep -v '\.config$' |
         $SORT_VERSION |
-        tail -1
-    )
+        tail -1 || true
+    )"
     echo "[bootstrap] floating guest kernel: ${KERNEL_KEY##*/} (set FIRECRACKER_KERNEL_VERSION to pin)"
   fi
   if [ -z "$KERNEL_KEY" ]; then

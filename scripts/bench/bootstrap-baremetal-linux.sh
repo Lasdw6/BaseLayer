@@ -13,7 +13,20 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 
-apt-get update
+apt_update_retry() {
+  local attempt
+  for attempt in 1 2 3; do
+    if apt-get update; then
+      return 0
+    fi
+    rm -rf /var/lib/apt/lists/*
+    mkdir -p /var/lib/apt/lists/partial
+    sleep $((attempt * 5))
+  done
+  apt-get update
+}
+
+apt_update_retry
 apt-get install -y \
   ca-certificates \
   curl \

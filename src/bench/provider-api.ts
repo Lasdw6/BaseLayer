@@ -320,9 +320,9 @@ async function runIteration(wave: number, slot: number): Promise<IterationResult
     const browserVersion = await browserConnection.version();
     const pageUrl = getBrowserArenaPageUrl();
     const awaitBenchReady = pageNavigationExpectsBenchReadyMarker(pageUrl);
+    const gotoStarted = performance.now();
     const context = browserConnection.contexts()[0] ?? (await browserConnection.newContext());
     const page = await context.newPage();
-    const gotoStarted = performance.now();
     await page.goto(pageUrl, {
       waitUntil: getBrowserArenaPageGotoWaitUntil(),
       timeout: 60_000,

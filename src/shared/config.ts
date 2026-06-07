@@ -132,6 +132,8 @@ export const agentConfig = {
   warmPoolReserve: envInt("WARM_POOL_RESERVE", 0),
   warmPoolFillConcurrency: envInt("WARM_POOL_FILL_CONCURRENCY", 3),
   warmRuntimeSettleMs: envInt("WARM_RUNTIME_SETTLE_MS", 250),
+  launchAdmissionWaitMs: envInt("NODE_AGENT_LAUNCH_ADMISSION_WAIT_MS", 0),
+  launchAdmissionPollMs: envInt("NODE_AGENT_LAUNCH_ADMISSION_POLL_MS", 100),
   keepFailedRuntimes: envString("KEEP_FAILED_RUNTIMES", "") === "1",
   sessionMemoryLimitMb: envInt("SESSION_MEMORY_LIMIT_MB", 384),
   sessionMemoryReservationMb: envInt("SESSION_MEMORY_RESERVATION_MB", 256),
@@ -240,6 +242,12 @@ export const agentConfig = {
     envInt("MAX_SESSIONS", 6),
   ),
   firecrackerLaunchConcurrency: envInt("FIRECRACKER_LAUNCH_CONCURRENCY", 0),
+  /**
+   * Concurrency cap for COLD restores only (warm-pool fallback + no-warm-profile path),
+   * held on a gate separate from warm-prep so a cold-restore burst can never starve warm
+   * refill. Keep small: this is the rare path; warm-prep stays on firecrackerLaunchConcurrency.
+   */
+  firecrackerColdRestoreConcurrency: envInt("FIRECRACKER_COLD_RESTORE_CONCURRENCY", 2),
   /** 0 = unlimited. Reject new sessions when this many microVMs are in `active-navigation` (goto pressure). */
   firecrackerMaxConcurrentActiveNavigation: envInt(
     "FIRECRACKER_MAX_CONCURRENT_ACTIVE_NAVIGATION",
@@ -295,6 +303,9 @@ export const agentConfig = {
   firecrackerRestoreTimeoutMs: envInt("FIRECRACKER_RESTORE_TIMEOUT_MS", 30_000),
   firecrackerRestoreRetries: envInt("FIRECRACKER_RESTORE_RETRIES", 1),
   firecrackerWarmClaimTimeoutMs: envInt("FIRECRACKER_WARM_CLAIM_TIMEOUT_MS", 10_000),
+  firecrackerWarmClaimConcurrency: envInt("FIRECRACKER_WARM_CLAIM_CONCURRENCY", 1),
+  firecrackerWarmWaitMs: envInt("FIRECRACKER_WARM_WAIT_MS", 0),
+  firecrackerWarmFallbackToCold: envBool("FIRECRACKER_WARM_FALLBACK_TO_COLD", true),
   firecrackerWarmKeepaliveIntervalMs: envInt("FIRECRACKER_WARM_KEEPALIVE_INTERVAL_MS", 2_000),
   firecrackerReadySettleMs: envInt("FIRECRACKER_READY_SETTLE_MS", 0),
   firecrackerBootTimeoutMs: envInt("FIRECRACKER_BOOT_TIMEOUT_MS", 60_000),

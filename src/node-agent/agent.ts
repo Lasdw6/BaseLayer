@@ -235,7 +235,15 @@ export class NodeAgent {
 
   readonly #firecracker = new FirecrackerOrchestrator();
 
+  // Warm-prep (refill) gate. Kept SEPARATE from cold restores so a cold-restore burst
+  // can never queue ahead of refill on a shared FIFO and starve the warm pool — the
+  // positive-feedback cliff that collapsed c10 reliability.
   readonly #firecrackerLaunchGate = new AsyncGate(agentConfig.firecrackerLaunchConcurrency);
+  // Cold restores (warm-pool fallback + no-warm-profile path) get their own small gate.
+  readonly #coldRestoreGate = new AsyncGate(agentConfig.firecrackerColdRestoreConcurrency);
+  // Warm claims are FIFO so older waiters get the next refilled VM instead of
+  // being starved by newer creates polling the shared warm pool.
+  readonly #firecrackerWarmClaimGate = new AsyncGate(agentConfig.firecrackerWarmClaimConcurrency);
 
   readonly #crashEvents: number[] = [];
 
@@ -484,7 +492,7 @@ export class NodeAgent {
   }
 
   async launchSession(input: CreateSessionRequest & { sessionId: string }): Promise<RuntimeLaunchResult> {
-    const releaseReservation = this.#reserveLaunchSlot(input.sessionId);
+    const releaseReservation = await this.#reserveLaunchSlot(input.sessionId);
     let releaseLaunchGate: (() => void) | undefined;
     let trackedFirecrackerLaunch = false;
 
@@ -504,7 +512,7 @@ export class NodeAgent {
           );
         } else {
           await this.#assertAdmission();
-          releaseLaunchGate = await this.#firecrackerLaunchGate.acquire();
+          releaseLaunchGate = await this.#coldRestoreGate.acquire();
           runtime = await this.#firecracker.restoreSession(input.sessionId, {
             proxyProfile: input.proxyProfile,
           });
@@ -849,8 +857,13 @@ export class NodeAgent {
           }
 
           await this.#firecracker.revalidateWarmSessions(runtimeProfile);
+          for (let index = this.#firecrackerWarmPoolSessionIds.length - 1; index >= 0; index -= 1) {
+            if (!this.#firecracker.hasSession(this.#firecrackerWarmPoolSessionIds[index])) {
+              this.#firecrackerWarmPoolSessionIds.splice(index, 1);
+            }
+          }
 
-          const targetBuildCount = computeFirecrackerWarmFillTarget({
+          let targetBuildCount = computeFirecrackerWarmFillTarget({
             warmPoolSize: agentConfig.warmPoolSize,
             warmPoolFillConcurrency: agentConfig.warmPoolFillConcurrency,
             maxMicrovmCount: agentConfig.firecrackerMaxMicrovmCount,
@@ -859,14 +872,51 @@ export class NodeAgent {
             readyWarmSessionCount: this.#firecrackerWarmPoolSessionIds.length,
           });
 
+          // Safe refill pacing: cap per-tick fan-out so one refill round doesn't launch a
+          // burst of parallel snapshot restores that contends with the wave's live
+          // navigations (the contention that times out CDP readiness and kills guests
+          // mid-goto -> page.goto "target closed"). This is a CAP, never a block, and is
+          // NOT keyed on active-session count (that would starve the pool permanently
+          // under sustained c10). Once the pool drops below a critical floor we refill at
+          // the full computed rate to recover fast.
+          const readyWarmCount = this.#firecrackerWarmPoolSessionIds.length;
+          const criticalWarmFloor = Math.max(2, Math.floor(agentConfig.warmPoolSize * 0.25));
+          if (readyWarmCount >= criticalWarmFloor) {
+            const perTickFillCap = Math.max(1, Math.floor(agentConfig.warmPoolFillConcurrency / 2));
+            targetBuildCount = Math.min(targetBuildCount, perTickFillCap);
+          }
+
           await Promise.allSettled(
             Array.from({ length: targetBuildCount }, async () => {
               const warmSessionId = `warm-${crypto.randomUUID()}`;
               this.#preparingWarmRuntimeCount += 1;
               try {
-                await this.#firecracker.prepareWarmSession(warmSessionId, {
-                  runtimeProfile,
-                });
+                // Bound concurrent warm restores with the same launch gate the active
+                // create path uses (#acquireWarmFirecrackerRuntime). Without this, a
+                // warm-fill round fans out up to fillConcurrency parallel snapshot
+                // restores whose mem-file page-faults saturate host IO and time out CDP
+                // readiness ('cdp-version'/'cdp-websocket-upgrade') on cold rounds.
+                const releaseLaunchGate = await this.#firecrackerLaunchGate.acquire();
+                try {
+                  const prepareTimeoutMs = Math.max(
+                    45_000,
+                    agentConfig.firecrackerRestoreTimeoutMs +
+                      agentConfig.firecrackerWarmClaimTimeoutMs +
+                      5_000,
+                  );
+                  await Promise.race([
+                    this.#firecracker.prepareWarmSession(warmSessionId, {
+                      runtimeProfile,
+                    }),
+                    sleep(prepareTimeoutMs).then(() => {
+                      throw new Error(
+                        `Timed out preparing warm Firecracker session after ${prepareTimeoutMs} ms.`,
+                      );
+                    }),
+                  ]);
+                } finally {
+                  releaseLaunchGate();
+                }
                 this.#firecrackerWarmPoolSessionIds.push(warmSessionId);
                 log("node-agent", "warm-firecracker-prepared", {
                   sessionId: warmSessionId,
@@ -878,6 +928,7 @@ export class NodeAgent {
                   sessionId: warmSessionId,
                   runtimeProfile,
                 });
+                await this.#firecracker.terminateSession(warmSessionId).catch(() => undefined);
               } finally {
                 this.#preparingWarmRuntimeCount = Math.max(0, this.#preparingWarmRuntimeCount - 1);
               }
@@ -1010,34 +1061,84 @@ export class NodeAgent {
     sessionId: string,
     runtimeProfile: string,
   ): Promise<RuntimeLaunchResult> {
-    while (this.#firecrackerWarmPoolSessionIds.length > 0) {
-      const warmSessionId = this.#firecrackerWarmPoolSessionIds.shift();
-      if (!warmSessionId) {
-        break;
+    const releaseWarmClaimGate = await this.#firecrackerWarmClaimGate.acquire();
+    try {
+      return await this.#acquireWarmFirecrackerRuntimeExclusive(sessionId, runtimeProfile);
+    } catch (error) {
+      if (!agentConfig.firecrackerWarmFallbackToCold) {
+        throw error;
       }
-
-      try {
-        const claimed = await this.#firecracker.claimWarmSession(warmSessionId, sessionId);
-        if (claimed) {
-          this.#scheduleWarmPoolMaintenance();
-          return claimed;
-        }
-      } catch (error) {
-        logError("node-agent", "warm-firecracker-claim-failed", error, {
-          warmSessionId,
-          requestedSessionId: sessionId,
-          runtimeProfile,
-        });
-      }
+    } finally {
+      releaseWarmClaimGate();
     }
 
     await this.#assertAdmission();
-    const releaseLaunchGate = await this.#firecrackerLaunchGate.acquire();
+    const releaseLaunchGate = await this.#coldRestoreGate.acquire();
     try {
       return await this.#firecracker.restoreSession(sessionId, {});
     } finally {
       releaseLaunchGate();
     }
+  }
+
+  async #acquireWarmFirecrackerRuntimeExclusive(
+    sessionId: string,
+    runtimeProfile: string,
+  ): Promise<RuntimeLaunchResult> {
+    const waitDeadlineMs =
+      agentConfig.firecrackerWarmWaitMs > 0
+        ? Date.now() + agentConfig.firecrackerWarmWaitMs
+        : 0;
+    let promptedWarmRefill = false;
+
+    while (true) {
+      while (this.#firecrackerWarmPoolSessionIds.length > 0) {
+        const warmSessionId = this.#firecrackerWarmPoolSessionIds.shift();
+        if (!warmSessionId) {
+          break;
+        }
+
+        try {
+          const claimed = await this.#firecracker.claimWarmSession(warmSessionId, sessionId);
+          if (claimed) {
+            this.#scheduleWarmPoolMaintenance();
+            return claimed;
+          }
+        } catch (error) {
+          logError("node-agent", "warm-firecracker-claim-failed", error, {
+            warmSessionId,
+            requestedSessionId: sessionId,
+            runtimeProfile,
+          });
+        }
+      }
+
+      if (waitDeadlineMs <= 0 || Date.now() >= waitDeadlineMs) {
+        break;
+      }
+
+      if (!promptedWarmRefill) {
+        promptedWarmRefill = true;
+        this.#scheduleWarmPoolMaintenance();
+        log("node-agent", "warm-firecracker-waiting-for-refill", {
+          requestedSessionId: sessionId,
+          runtimeProfile,
+          waitMs: agentConfig.firecrackerWarmWaitMs,
+        });
+      }
+
+      await sleep(Math.min(100, Math.max(1, waitDeadlineMs - Date.now())));
+    }
+
+    if (!agentConfig.firecrackerWarmFallbackToCold) {
+      throw new Error(
+        `Warm Firecracker pool did not produce a ready session within ${agentConfig.firecrackerWarmWaitMs} ms.`,
+      );
+    }
+
+    throw new Error(
+      `Warm Firecracker pool did not produce a ready session within ${agentConfig.firecrackerWarmWaitMs} ms.`,
+    );
   }
 
   async #prepareRuntime(
@@ -1145,15 +1246,41 @@ export class NodeAgent {
     }
   }
 
-  #reserveLaunchSlot(sessionId: string): () => void {
-    if (this.#sessions.size + this.#launchReservationCount() >= agentConfig.maxSessions) {
-      throw new Error("Host is at its configured session capacity.");
-    }
+  #hasLaunchCapacity(): boolean {
+    // Allow borrowing up to warm-ready depth above maxSessions: a warm claim consumes a
+    // pre-built microVM (already counted against the real microVM cap), so it adds no new
+    // capacity. This mirrors the scheduler + deriveStatus warm-borrow escapes so the
+    // agent doesn't reject warm-claimable creates that the control plane admitted.
+    const warmReadyForBorrow =
+      agentConfig.mode === "firecracker" ? this.#firecrackerWarmPoolSessionIds.length : 0;
+    return (
+      this.#sessions.size + this.#launchReservationCount() <
+      agentConfig.maxSessions + warmReadyForBorrow
+    );
+  }
 
-    this.#launchReservations.set(sessionId, Date.now());
-    return () => {
-      this.#launchReservations.delete(sessionId);
-    };
+  async #reserveLaunchSlot(sessionId: string): Promise<() => void> {
+    const waitMs = Math.max(0, agentConfig.launchAdmissionWaitMs);
+    const deadlineMs = waitMs > 0 ? Date.now() + waitMs : 0;
+
+    while (true) {
+      this.#pruneStaleLaunchReservations();
+      if (this.#hasLaunchCapacity()) {
+        this.#launchReservations.set(sessionId, Date.now());
+        return () => {
+          this.#launchReservations.delete(sessionId);
+        };
+      }
+
+      if (deadlineMs <= 0 || Date.now() >= deadlineMs) {
+        throw new Error("Host is at its configured session capacity.");
+      }
+
+      await sleep(Math.min(
+        Math.max(25, agentConfig.launchAdmissionPollMs),
+        Math.max(1, deadlineMs - Date.now()),
+      ));
+    }
   }
 
   #sessionFootprintSummary(): {
@@ -1342,7 +1469,13 @@ export class NodeAgent {
     loadAvg1m: number;
     activeNavigationSessionCount?: number;
   }): "healthy" | "degraded" | "no-admit" | "draining" {
-    if (metrics.activeSessions >= agentConfig.maxSessions) {
+    // Warm-borrow consistency: a full session count or microVM count must NOT flip
+    // the host to no-admit while warm-ready VMs exist. A warm claim reuses a
+    // pre-built microVM and adds no restore load. Without this, the scheduler's
+    // status gate rejects the host before its own warm-borrow escape can run.
+    const warmReadyForBorrow =
+      agentConfig.mode === "firecracker" ? this.#firecrackerWarmPoolSessionIds.length : 0;
+    if (metrics.activeSessions >= agentConfig.maxSessions && warmReadyForBorrow === 0) {
       return "no-admit";
     }
 
@@ -1361,7 +1494,8 @@ export class NodeAgent {
         metrics.cpuUtilizationPct >= agentConfig.firecrackerCpuAdmissionPct &&
         metrics.loadAvg1m >= this.#hostCpuCount * agentConfig.firecrackerCpuAdmissionLoadRatio) ||
       (agentConfig.mode === "firecracker" &&
-        this.#firecracker.activeMicrovmCount >= agentConfig.firecrackerMaxMicrovmCount) ||
+        this.#firecracker.activeMicrovmCount >= agentConfig.firecrackerMaxMicrovmCount &&
+        warmReadyForBorrow === 0) ||
       (agentConfig.mode === "firecracker" &&
         agentConfig.firecrackerMaxConcurrentActiveNavigation > 0 &&
         (metrics.activeNavigationSessionCount ?? 0) >=

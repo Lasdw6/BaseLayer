@@ -17,7 +17,7 @@ These are **self-hosted** BrowserArena-methodology runs.
 ### Latest Methodology Snapshot
 
 BrowserArena changed its default fairness URL to `example.com` on 2026-05-05.
-Using that current target, BaseLayer's latest conservative sequential
+Using that current target, BaseLayer's latest sequential
 self-hosted snapshot was measured on 2026-06-01. The competitor positioning referenced in
 [`docs/browserarena-results.md`](./docs/browserarena-results.md) uses
 BrowserArena c1 leaderboard numbers checked on 2026-06-01.
@@ -31,7 +31,7 @@ not the headline comparison number.
 
 | Runtime / profile | Run date | Topology | Runs | Success | Create p50 | Connect p50 | Goto p50 | Release p50 | Lifecycle p50 |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `baselayer-firecracker-headless-shell` | 2026-06-01 | AWS `t3.micro` runner -> AWS `m5zn.metal` host, `us-east-2`, BrowserArena stages, `http://example.com`, `c1 x100`, slowest clean run from 5 repeats | 100 | `100/100` | `74.8 ms` | `54.4 ms` | `82.6 ms` | `11.8 ms` | `223.6 ms` |
+| `baselayer-firecracker-headless-shell` | 2026-06-01 | AWS `t3.micro` runner -> AWS `m5zn.metal` host, `us-east-2`, BrowserArena stages, `example.com` target, `c1 x100`, slowest clean run from 5 repeats | 100 | `100/100` | `74.8 ms` | `54.4 ms` | `82.6 ms` | `11.8 ms` | `223.6 ms` |
 
 These are **self-hosted, sequential** benchmark results from five `c1 x100`
 runs on 2026-06-01. The public headline uses the slowest clean `100/100` run
@@ -44,6 +44,18 @@ this repo includes the [benchmark harness used, run artifacts, and replication n
 The latest concurrent `c10 x10` run remains under review while the scheduler and
 demo harness are being hardened. The current public headline is the conservative
 sequential run above.
+
+The one-shot self-hosted BrowserArena runner now provisions the AWS `t3.micro`
+runner and `m5zn.metal` provider host, bootstraps BaseLayer, waits for warm-pool
+readiness, runs BrowserArena, pulls artifacts, and tears down resources. See
+[`docs/BENCHMARKS.md`](./docs/BENCHMARKS.md#one-shot-self-hosted-browserarena-runner)
+for the exact command and benchmark knobs.
+
+The current self-host runner path was revalidated on 2026-06-06 with
+`https://example.com`, `c1 x100`, and `c10 x100`. Three fresh-metal repeats were
+clean for both c1 and c10. Immediate back-to-back same-host repeats kept c1
+stable and kept c10 p50 in range, but the third c10 repeat reached `98/100`, so
+same-host density reruns should still be treated as reliability stress tests.
 
 See [`docs/browserarena-results.md`](./docs/browserarena-results.md) for the
 replication notes and caveats.
@@ -148,7 +160,7 @@ export BASELAYER_API_URL="http://<provider-host>:3000/v1"
 export BASELAYER_RUNTIME_PROFILE="baselayer-firecracker-headless-shell"
 export BENCH_RUNS=100
 export BENCH_CONCURRENCY=1
-export BENCH_BROWSERARENA_PAGE_URL="http://example.com/"
+export BENCH_BROWSERARENA_PAGE_URL="https://example.com/"
 export BENCH_PAGE_GOTO_WAIT_UNTIL="domcontentloaded"
 export BENCH_CONNECT_RETRY_BUDGET_MS=15000
 export BENCH_OUT="$PWD/data/benchmarks/provider-api-100.json"
@@ -186,12 +198,13 @@ lifecycle against a self-hosted BaseLayer provider endpoint. Use the same
 topology when comparing numbers:
 
 - runner and provider in the same AWS region
-- target: `example.com` for current BrowserArena methodology, or Google only
+- target: `https://example.com` for current BrowserArena methodology, or Google only
   when reproducing the historical snapshot above
 - wait condition: `domcontentloaded`
 - runs: `100`
 - concurrency: `1`
-- no request blocking
+- bounded provider-side admission backpressure is allowed only when it is
+  counted inside `session_creation_ms`
 - async delete enabled for latency-style runs
 
 Shape:

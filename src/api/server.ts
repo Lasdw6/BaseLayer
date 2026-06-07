@@ -61,6 +61,14 @@ const HOST_CREATE_RESERVATION_TTL_MS = Math.max(
     15_000,
 );
 const HOST_DELETE_RESERVATION_TTL_MS = 15_000;
+const SCHEDULER_ADMISSION_WAIT_MS = Number.parseInt(
+  process.env["CONTROL_PLANE_SCHEDULER_ADMISSION_WAIT_MS"] ?? "0",
+  10,
+);
+const SCHEDULER_ADMISSION_POLL_MS = Math.max(
+  50,
+  Number.parseInt(process.env["CONTROL_PLANE_SCHEDULER_ADMISSION_POLL_MS"] ?? "250", 10),
+);
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -88,6 +96,37 @@ function authenticatePartnerRequest(
   }
 
   return auth;
+}
+
+async function sleepMs(durationMs: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, durationMs));
+}
+
+async function reserveHostForCreateWithBackpressure(input: {
+  sessionId: string;
+  preferredRegion?: string;
+  runtimeProfile?: string;
+  ttlMs: number;
+}): Promise<ReturnType<typeof store.reserveHostForCreate>> {
+  const waitMs = Number.isFinite(SCHEDULER_ADMISSION_WAIT_MS)
+    ? Math.max(0, SCHEDULER_ADMISSION_WAIT_MS)
+    : 0;
+  const deadline = Date.now() + waitMs;
+  let lastError: SchedulerError | undefined;
+
+  while (true) {
+    try {
+      return store.reserveHostForCreate(input);
+    } catch (error) {
+      if (!(error instanceof SchedulerError) || Date.now() >= deadline) {
+        throw error;
+      }
+      lastError = error;
+      await sleepMs(Math.min(SCHEDULER_ADMISSION_POLL_MS, Math.max(1, deadline - Date.now())));
+    }
+  }
+
+  throw lastError ?? new SchedulerError("No host is currently eligible for session admission.");
 }
 
 function extractIdempotencyKey(request: FastifyRequest): string | undefined {
@@ -287,7 +326,7 @@ async function createSessionFromRequest(
 
     const sessionId = crypto.randomUUID();
     const schedulerStarted = performance.now();
-    const { host, reservation } = store.reserveHostForCreate({
+    const { host, reservation } = await reserveHostForCreateWithBackpressure({
       sessionId,
       preferredRegion: scopedRequest.region,
       runtimeProfile: scopedRequest.runtimeProfile,
@@ -637,20 +676,12 @@ async function deleteSessionFromRequest(
           }
         : undefined,
   });
-  store.commitSessionMutation({
-    session: {
-      ...(persistedBase.session ?? session),
-      controlPlaneTimings: {
-        ...(persistedBase.session?.controlPlaneTimings ?? session.controlPlaneTimings),
-        delete: {
-          totalMs,
-          remoteDeleteMs,
-          persistMs: persistedBase.persistMs,
-          async: asyncDelete,
-        },
-      },
-    },
-  });
+  // Single full-state write per delete: the stored record carries persistMs: 0 as a
+  // placeholder because the persist duration is only known after the write returns.
+  // The accurate value is reported via the Server-Timing header below from
+  // persistedBase.persistMs; nothing reads delete.persistMs back from the store, so a
+  // second commit purely to backfill it is wasted work that serializes hard on the
+  // store lock under concurrent release (c10).
 
   if (asyncDelete) {
     void deleteRemoteSession(host, sessionId).catch((error) => {

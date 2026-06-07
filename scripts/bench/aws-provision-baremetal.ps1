@@ -259,15 +259,14 @@ $keyName = $name
 $keyPath = (Resolve-Path ".tmp").Path
 $keyPath = Join-Path $keyPath "$keyName.pem"
 
-$keyMaterial = Invoke-AwsText @(
+$keyPair = Invoke-AwsJson @(
   "ec2","create-key-pair",
   "--profile",$Profile,
   "--region",$Region,
   "--key-name",$keyName,
-  "--query","KeyMaterial",
-  "--output","text"
+  "--output","json"
 )
-[System.IO.File]::WriteAllText($keyPath, $keyMaterial, [System.Text.Encoding]::ASCII)
+[System.IO.File]::WriteAllText($keyPath, $keyPair.KeyMaterial, [System.Text.Encoding]::ASCII)
 $createdKeyName = $keyName
 Set-PrivateKeyAcl -Path $keyPath
 
@@ -386,6 +385,7 @@ $metadata = [ordered]@{
 
 $metadata | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $MetadataPath -Encoding UTF8
 $metadata | ConvertTo-Json -Depth 5
+exit 0
 }
 catch {
   Remove-AwsProvisionArtifacts -KeyName $createdKeyName -SecurityGroupId $createdSecurityGroupId -KeyPath $keyPath

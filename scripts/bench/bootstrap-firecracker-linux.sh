@@ -104,20 +104,27 @@ if ! command -v firecracker >/dev/null 2>&1; then
   TMP_DIR=$(mktemp -d)
   trap 'rm -rf "$TMP_DIR"' EXIT
   FIRECRACKER_ARCHIVE="$TMP_DIR/firecracker-${LATEST}-${ARCH}.tgz"
-  FIRECRACKER_ARCHIVE_URL="${RELEASE_URL}/download/${LATEST}/firecracker-${LATEST}-${ARCH}.tgz"
-  for attempt in 1 2 3; do
-    if curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 300 \
-      -o "$FIRECRACKER_ARCHIVE" "$FIRECRACKER_ARCHIVE_URL" &&
-      tar -tzf "$FIRECRACKER_ARCHIVE" >/dev/null; then
-      break
+  FIRECRACKER_ARCHIVE_URLS=(
+    "${RELEASE_URL}/download/${LATEST}/firecracker-${LATEST}-${ARCH}.tgz"
+    "https://downloads.sourceforge.net/project/firecracker.mirror/${LATEST}/firecracker-${LATEST}-${ARCH}.tgz"
+  )
+  FIRECRACKER_ARCHIVE_READY=0
+  for FIRECRACKER_ARCHIVE_URL in "${FIRECRACKER_ARCHIVE_URLS[@]}"; do
+    for attempt in 1 2 3; do
+      if curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 300 \
+        -o "$FIRECRACKER_ARCHIVE" "$FIRECRACKER_ARCHIVE_URL" &&
+        tar -tzf "$FIRECRACKER_ARCHIVE" >/dev/null; then
+        FIRECRACKER_ARCHIVE_READY=1
+        break 2
+      fi
+      rm -f "$FIRECRACKER_ARCHIVE"
+      sleep $((attempt * 5))
     fi
-    rm -f "$FIRECRACKER_ARCHIVE"
-    if [ "$attempt" -eq 3 ]; then
-      echo "Failed to download a valid Firecracker archive from $FIRECRACKER_ARCHIVE_URL." >&2
-      exit 1
-    fi
-    sleep $((attempt * 5))
   done
+  if [ "$FIRECRACKER_ARCHIVE_READY" -ne 1 ]; then
+    echo "Failed to download a valid Firecracker archive from configured mirrors." >&2
+    exit 1
+  fi
   tar -xzf "$FIRECRACKER_ARCHIVE" -C "$TMP_DIR"
   FIRECRACKER_BIN="$(
     find "$TMP_DIR" -type f -name "firecracker-${LATEST}-${ARCH}" -perm -u+x -print -quit

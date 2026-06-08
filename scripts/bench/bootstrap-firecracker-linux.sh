@@ -119,7 +119,7 @@ if ! command -v firecracker >/dev/null 2>&1; then
       fi
       rm -f "$FIRECRACKER_ARCHIVE"
       sleep $((attempt * 5))
-    fi
+    done
   done
   if [ "$FIRECRACKER_ARCHIVE_READY" -ne 1 ]; then
     echo "Failed to download a valid Firecracker archive from configured mirrors." >&2

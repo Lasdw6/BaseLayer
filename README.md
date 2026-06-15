@@ -10,6 +10,8 @@ BrowserArena lifecycle methodology:
 session create + CDP connect + page.goto + session release
 ```
 
+Launch thread: [BaseLayer on X](https://x.com/lasdvv/status/2061544439223656542)
+
 ## Results
 
 These are **self-hosted** BrowserArena-methodology runs.

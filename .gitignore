@@ -39,3 +39,7 @@ wget-log*
 
 vendor/*
 .gstack/
+
+.deploy/
+
+deploy/paperplanes/*.local.json

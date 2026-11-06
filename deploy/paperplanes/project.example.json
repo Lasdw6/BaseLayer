@@ -1,0 +1,69 @@
+{
+  "project": {
+    "id": "baselayer",
+    "name": "BaseLayer",
+    "description": "BaseLayer API, Docker browser agent, and Scry on a private E2B sandbox."
+  },
+  "resources": [
+    {
+      "provider": "e2b",
+      "id": "YOUR_SANDBOX_ID"
+    }
+  ],
+  "services": [
+    {
+      "id": "baselayer-agent",
+      "project_id": "baselayer",
+      "name": "BaseLayer browser agent",
+      "purpose": "Runs Chromium in Docker inside this private E2B sandbox. Browser clients run inside the sandbox.",
+      "provider": "e2b",
+      "sandbox_id": "YOUR_SANDBOX_ID",
+      "dependencies": [
+        "baselayer-api"
+      ],
+      "health_command": "curl -fsS --max-time 5 http://127.0.0.1:4000/health",
+      "restart_command": "supervisorctl -c /data/baselayer-supervisord.conf restart baselayer-agent",
+      "log_files": [
+        "/data/logs/baselayer-agent.log",
+        "/data/logs/baselayer-agent-error.log"
+      ],
+      "telemetry": false,
+      "telemetry_transport": "direct"
+    },
+    {
+      "id": "baselayer-api",
+      "project_id": "baselayer",
+      "name": "BaseLayer API",
+      "purpose": "Schedules real Chromium sessions and persists their state.",
+      "provider": "e2b",
+      "sandbox_id": "YOUR_SANDBOX_ID",
+      "dependencies": [],
+      "health_command": "curl -fsS --max-time 5 http://127.0.0.1:3000/health",
+      "restart_command": "supervisorctl -c /data/baselayer-supervisord.conf restart baselayer-api",
+      "log_files": [
+        "/data/logs/baselayer-api.log",
+        "/data/logs/baselayer-api-error.log"
+      ],
+      "telemetry": false,
+      "telemetry_transport": "direct",
+      "test_command": "node /opt/baselayer/deploy/paperplanes/verify.mjs"
+    },
+    {
+      "id": "baselayer-scry",
+      "project_id": "baselayer",
+      "name": "BaseLayer telemetry",
+      "purpose": "Exports process, memory, and browser activity directly to the authenticated Paperplanes collector.",
+      "provider": "e2b",
+      "sandbox_id": "YOUR_SANDBOX_ID",
+      "dependencies": [],
+      "health_command": "supervisorctl -c /data/baselayer-supervisord.conf status scry-daemon",
+      "restart_command": "supervisorctl -c /data/baselayer-supervisord.conf restart scry-daemon",
+      "log_files": [
+        "/data/logs/scry-daemon.log",
+        "/data/logs/scry-daemon-error.log"
+      ],
+      "telemetry": true,
+      "telemetry_transport": "direct"
+    }
+  ]
+}

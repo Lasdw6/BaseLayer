@@ -1,0 +1,39 @@
+package.json
+  s_51e1b3e5ad56cf::t_faddf4e47c95f6 74
+.gitignore
+  s_51e1b3e5ad56cf::t_d34aa86ef7f938 42-45
+deploy/paperplanes/README.md
+  s_51e1b3e5ad56cf::t_b64df512c55e01 1-46
+deploy/paperplanes/boot.sh
+  s_51e1b3e5ad56cf::t_9007634cff28b3 1-40
+deploy/paperplanes/build.mjs
+  s_51e1b3e5ad56cf::t_a069540252582c 1-28
+deploy/paperplanes/prepare.sh
+  s_51e1b3e5ad56cf::t_d4cf05823206fd 1-19
+deploy/paperplanes/project.example.json
+  s_51e1b3e5ad56cf::t_8607daf77a47af 1-69
+deploy/paperplanes/scry.sh
+  s_51e1b3e5ad56cf::t_cd9e70b6a334da 1-8
+deploy/paperplanes/smoke.mjs
+  s_51e1b3e5ad56cf::t_27f02950299cc9 1-59
+deploy/paperplanes/verify.mjs
+  s_51e1b3e5ad56cf::t_66e381b494fbba 1-26
+package-lock.json
+  s_51e1b3e5ad56cf::t_32fcf243b254fb 10,25,31-68,622-634,1236-1258,1286-1298,1309-1325,1376-1398,1657-1674,1774-1783,1794-1832,1868-1901,1976-1982,2277-2293,2410-2419,2615-2624
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "903421a731e116326968ea76d9dc657213e8d9da",
+  "prompts": {},
+  "sessions": {
+    "s_51e1b3e5ad56cf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19292-d423-7031-b807-7b3bf42915a8",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Vividh Mahajan <vividhmahajan@gmail.com>"
+    }
+  }
+}
